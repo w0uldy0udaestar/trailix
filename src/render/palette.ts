@@ -77,11 +77,13 @@ export function resolveColor(env: NodeJS.ProcessEnv, isTTY: boolean): boolean {
 }
 
 const BACKTICK_RE = /`[^`]+`/g;
-const PATH_RE = /(?:\.{0,2}\/)?(?:[\w.@-]+\/)+[\w.@-]+(?::\d+)?/g;
+// A single alternation over PLAIN text: `command` span OR a path token. One
+// String.replace pass means the regex never re-scans painted ANSI (the source
+// string is scanned, replacements are not), so escapes can't be matched into.
+const INLINE_RE = /`[^`]+`|(?:\.{0,2}\/)?(?:[\w.@-]+\/)+[\w.@-]+(?::\d+)?/g;
 
 /** Colour paths and `commands` cyan (actionable targets). No-op without color. */
 export function colorizeInline(text: string, opts: PaletteOptions = {}): string {
   if (opts.color !== true) return text.replace(BACKTICK_RE, (m) => m.slice(1, -1));
-  const withCmds = text.replace(BACKTICK_RE, (m) => paint(m.slice(1, -1), 'cyan', opts));
-  return withCmds.replace(PATH_RE, (m) => (m.includes('\x1b') ? m : paint(m, 'cyan', opts)));
+  return text.replace(INLINE_RE, (m) => paint(m.startsWith('`') ? m.slice(1, -1) : m, 'cyan', opts));
 }

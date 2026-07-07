@@ -103,7 +103,10 @@ function renderCard(card: Card, o: RenderOpts): string {
   // ── next ──
   if (card.next !== undefined) {
     out.push(sectionLabel('section.next', lang, opts));
-    for (const line of wrapText(card.next, o.width - 3)) out.push('   ' + colorizeInline(line, opts));
+    // colourize the whole string first, THEN wrap: colorizeInline matches
+    // closed `command` spans, which a per-line wrap could split (leaking
+    // literal backticks). Painted spans are ANSI-aware for the wrap width.
+    for (const line of wrapText(colorizeInline(card.next, opts), o.width - 3)) out.push('   ' + line);
   }
 
   return out.join('\n');

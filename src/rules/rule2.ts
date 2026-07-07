@@ -14,36 +14,45 @@ import { domainOf } from './shared.ts';
  */
 
 export const RULE2_MIN_DOMAINS = 2;
-/** Below this many web actions it is an incidental lookup, not a research turn. */
-export const RULE2_MIN_WEB_SIGNALS = 2;
+/**
+ * The rule needs ≥2 actual source fetches to judge cross-validation. Domains
+ * only come from WebFetch URLs — WebSearch results are not parsed — so a
+ * search-only turn has domains structurally unavailable and must NOT be
+ * reported as "0 sources" (that was a systematic false positive).
+ */
+export const RULE2_MIN_FETCHES = 2;
 
 export interface Rule2Breakdown {
   domains: string[];
-  webSignals: number;
+  fetches: number;
+  searches: number;
 }
 
 export function analyzeRule2(stats: SessionStats): Rule2Breakdown {
   const domains = new Set<string>();
-  let webSignals = 0;
+  let fetches = 0;
+  let searches = 0;
   for (const e of stats.events) {
     if (e.tool === 'WebFetch') {
-      webSignals += 1;
+      fetches += 1;
       if (e.url !== undefined) {
         const d = domainOf(e.url);
         if (d !== undefined) domains.add(d);
       }
     } else if (e.tool === 'WebSearch') {
-      webSignals += 1;
+      searches += 1;
     }
   }
-  return { domains: [...domains], webSignals };
+  return { domains: [...domains], fetches, searches };
 }
 
 export function evaluateRule2(stats: SessionStats, options: { lang?: Lang } = {}): RuleResult {
   const lang: Lang = options.lang ?? 'en';
   const b = analyzeRule2(stats);
 
-  if (b.webSignals < RULE2_MIN_WEB_SIGNALS) {
+  // Only judged when sources were actually fetched. Search-only research is a
+  // backlog concern (results aren't parsed), never a "0 sources" caution.
+  if (b.fetches < RULE2_MIN_FETCHES) {
     return { ruleId: 'rule2', verdict: 'no_verdict', evidence: [], annotations: [] };
   }
   const n = b.domains.length;

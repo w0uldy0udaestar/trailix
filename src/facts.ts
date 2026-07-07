@@ -61,6 +61,17 @@ export function computeFactCounts(stats: SessionStats): FactCounts {
   };
 }
 
+/**
+ * Compact wall-clock span. Resumed session files can span days of idle time
+ * (first-to-last record), so minutes are rolled up to h/d rather than printing
+ * an absurd "62827분".
+ */
+export function formatDuration(min: number, lang: Lang): string {
+  if (min < 90) return msg('fact.duration', { n: min }, lang);
+  if (min < 1440) return msg('fact.duration.hour', { n: Math.round(min / 60) }, lang);
+  return msg('fact.duration.day', { n: Math.round(min / 1440) }, lang);
+}
+
 /** Fact lines for the card (≤2 lines): a sources line and an activity line. */
 export function factLines(stats: SessionStats, lang: Lang): string[] {
   const f = computeFactCounts(stats);
@@ -75,7 +86,7 @@ export function factLines(stats: SessionStats, lang: Lang): string[] {
     activity.push(msg(f.searchEstimated ? 'fact.searched.est' : 'fact.searched', { n: f.searches }, lang));
   }
   if (f.subagents > 0) activity.push(msg('fact.subagents', { n: f.subagents }, lang));
-  if (f.durationMin !== undefined && f.durationMin > 0) activity.push(msg('fact.duration', { n: f.durationMin }, lang));
+  if (f.durationMin !== undefined && f.durationMin > 0) activity.push(formatDuration(f.durationMin, lang));
   if (f.estTok > 0) activity.push(msg('fact.tokens', { n: compactCount(f.estTok) }, lang));
 
   if (activity.length > 0) lines.push(activity.join(' · '));

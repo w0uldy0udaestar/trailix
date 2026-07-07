@@ -1,4 +1,5 @@
 import type { Lang } from './types.ts';
+import { middleEllipsis } from './render/width.ts';
 
 /**
  * Message catalog (en/ko). All user-facing card strings live here, never in
@@ -91,16 +92,16 @@ const CATALOG = {
   'headline.no_verdict': { en: 'not enough to grade yet', ko: '아직 채점할 게 부족해요' },
   'scope.session': { en: 'session · {n} turns', ko: '세션 누적 · {n}턴' },
   'state.no_verdict': {
-    en: 'no verdict — not enough delegated activity to grade yet',
-    ko: '판정 불가 — 채점할 위임 활동이 아직 부족해요',
+    en: 'no verdict — nothing yet meets a scoring rule',
+    ko: '판정 불가 — 아직 채점 기준을 충족한 활동이 없어요',
   },
   'state.empty.title': {
     en: 'nothing to grade in this session yet',
     ko: '아직 이 세션엔 채점할 작업이 없어요',
   },
   'next.after_work': {
-    en: 'run trailix again after some delegated work and a verdict will appear',
-    ko: '위임 작업 후 다시 실행하면 판정이 붙습니다',
+    en: 'do a bit more work (edits, sources, or delegation) and re-run',
+    ko: '작업(수정·소스·위임)을 좀 더 하고 다시 실행하면 판정이 붙습니다',
   },
   'next.list_hint': {
     en: 'tip: `trailix list` shows recent sessions',
@@ -119,6 +120,8 @@ const CATALOG = {
   'fact.subagents': { en: '{n} subagents', ko: '서브에이전트 {n}' },
   'fact.tokens': { en: '~{n} tok', ko: '약 {n} tok' },
   'fact.duration': { en: '{n}m', ko: '{n}분' },
+  'fact.duration.hour': { en: '~{n}h', ko: '약 {n}시간' },
+  'fact.duration.day': { en: '~{n}d', ko: '약 {n}일' },
 
   // ── rule display names + not-applicable note ─────────────────────────────
   'rulename.rule1': { en: 'blind edits', ko: '읽지 않고 수정' },
@@ -148,9 +151,12 @@ export function msg(key: MessageKey, params: Record<string, string | number> = {
   return out;
 }
 
-/** "a.ts, b.ts 외 2개" — full width/truncation rules arrive with T14. */
+/** Per-path display cap: keep head+filename so the tail (filename) survives. */
+const PATH_CAP = 30;
+
+/** "a.ts, b.ts 외 2개" — long paths middle-elided so the filename is kept. */
 export function fileList(files: string[], lang: Lang, max = 3): string {
-  const shown = files.slice(0, max).join(', ');
+  const shown = files.slice(0, max).map((f) => middleEllipsis(f, PATH_CAP)).join(', ');
   const rest = files.length - max;
   return rest > 0 ? shown + msg('list.more', { n: rest }, lang) : shown;
 }

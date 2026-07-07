@@ -77,8 +77,10 @@ export function buildCard(stats: SessionStats, options: BuildCardOptions = {}): 
   const scope = msg('scope.session', { n: stats.humanInputCount }, lang);
   const facts = factLines(stats, lang);
 
-  // Empty: nothing happened this session.
-  if (stats.events.length === 0) {
+  // Empty: nothing happened this session. Guarded on scorability so a session
+  // that is unscorable (e.g. all-unknown records) but has 0 events falls
+  // through to the honest no_verdict state instead of the onboarding message.
+  if (stats.events.length === 0 && isScorable(stats)) {
     return {
       state: 'empty',
       overall: 'no_verdict',
