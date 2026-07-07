@@ -47,3 +47,10 @@ test('bad stdin JSON → silent, never throws', async () => {
   assert.equal(await runHook('{}', {}), '');
   assert.equal(await runHook(JSON.stringify({ transcript_path: '/does/not/exist.jsonl' }), {}), '');
 });
+
+test('stdin literal null → silent, never throws (JSON.parse(null) === null guard)', async () => {
+  assert.equal(await runHook('null', {}), '');
+  assert.equal(await runHook('42', {}), '');
+  assert.equal(await runHook('"a string"', {}), '');
+  assert.equal(await runHook('[1,2,3]', {}), '');
+});

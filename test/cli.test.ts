@@ -1,10 +1,10 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdtempSync, mkdirSync, writeFileSync, utimesSync } from 'node:fs';
+import { mkdtempSync, mkdirSync, writeFileSync, utimesSync, readFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { runCli, type CliIO } from '../src/cli.ts';
-import { cwdToDirName, selectLatestSession, listProjectSessions } from '../src/session-select.ts';
+import { cwdToDirName, selectLatestSession, listProjectSessions, runningSessionIds } from '../src/session-select.ts';
 import { humanInput, read, edit, session } from './helpers/fixture.ts';
 
 // A throwaway ~/.claude/projects tree with one project + N sessions.
@@ -76,10 +76,47 @@ test('no sessions → friendly guidance, exit 0 (never an error)', async () => {
   assert.match(r.stdout, /no session history/);
 });
 
-test('--done excludes a session whose id is in the running set is not testable here, but --done runs cleanly', async () => {
-  const { home } = makeHome('/home/u/proj', { s1: session(read('/p/a.ts'), edit('/p/a.ts')) });
-  const r = await runCli(io({ argv: ['last', '--done'], env: { HOME: home } }));
-  assert.equal(r.exitCode, 0); // no running registry in temp home → nothing excluded
+test('runningSessionIds detects a live session via /proc starttime (string procStart)', () => {
+  // Registry stores procStart as a STRING; compare it against this live process.
+  const home = mkdtempSync(join(tmpdir(), 'trailix-reg-'));
+  mkdirSync(join(home, '.claude', 'sessions'), { recursive: true });
+  const starttime = readFileSync(`/proc/${process.pid}/stat`, 'utf8');
+  const procStart = starttime.slice(starttime.lastIndexOf(')') + 2).split(' ')[19] as string;
+  writeFileSync(
+    join(home, '.claude', 'sessions', `${process.pid}.json`),
+    JSON.stringify({ pid: process.pid, sessionId: 'live-session', procStart }), // string!
+  );
+  // a dead/foreign entry that must NOT be included
+  writeFileSync(
+    join(home, '.claude', 'sessions', '999999.json'),
+    JSON.stringify({ pid: 999999, sessionId: 'dead-session', procStart: '1' }),
+  );
+  const running = runningSessionIds(home);
+  assert.equal(running.has('live-session'), true, '--done guard must detect the live session');
+  assert.equal(running.has('dead-session'), false);
+});
+
+test('--done excludes the running session and picks the previous one', () => {
+  const home = mkdtempSync(join(tmpdir(), 'trailix-done-'));
+  const dir = join(home, '.claude', 'projects', cwdToDirName('/home/u/proj'));
+  mkdirSync(dir, { recursive: true });
+  const older = join(dir, 'older.jsonl');
+  const running = join(dir, `${process.pid}live.jsonl`); // newest, but "running"
+  writeFileSync(older, session(read('/p/a.ts'), edit('/p/a.ts')).join('\n'));
+  writeFileSync(running, session(read('/p/b.ts'), edit('/p/b.ts')).join('\n'));
+  utimesSync(older, 1000, 1000);
+  utimesSync(running, 2000, 2000);
+  mkdirSync(join(home, '.claude', 'sessions'), { recursive: true });
+  const st = readFileSync(`/proc/${process.pid}/stat`, 'utf8');
+  const procStart = st.slice(st.lastIndexOf(')') + 2).split(' ')[19] as string;
+  writeFileSync(
+    join(home, '.claude', 'sessions', `${process.pid}.json`),
+    JSON.stringify({ pid: process.pid, sessionId: `${process.pid}live`, procStart }),
+  );
+  const plain = selectLatestSession({ cwd: '/home/u/proj', home });
+  const done = selectLatestSession({ cwd: '/home/u/proj', home, excludeRunning: true });
+  assert.equal(plain?.sessionId, `${process.pid}live`);
+  assert.equal(done?.sessionId, 'older'); // running one excluded
 });
 
 test('--self --format md grades the current session as markdown', async () => {

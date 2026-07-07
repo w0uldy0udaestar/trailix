@@ -126,5 +126,11 @@ export async function runCli(io: CliIO, now = Date.now()): Promise<CliResult> {
       selectLatestSession({ cwd: io.cwd, home: io.env['HOME'] })
     : selectLatestSession({ cwd: io.cwd, home: io.env['HOME'], excludeRunning: args.done });
   if (session === undefined) return { exitCode: 0, stdout: noSessionMessage(lang) + '\n' };
-  return { exitCode: 0, stdout: (await renderSession(session, io, args, lang)) + '\n' };
+  try {
+    return { exitCode: 0, stdout: (await renderSession(session, io, args, lang)) + '\n' };
+  } catch {
+    // session file vanished or became unreadable between selection and parse —
+    // degrade to guidance, never a stack trace (cli.ts fail-soft contract)
+    return { exitCode: 0, stdout: noSessionMessage(lang) + '\n' };
+  }
 }

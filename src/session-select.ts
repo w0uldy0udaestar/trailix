@@ -75,10 +75,14 @@ export function runningSessionIds(home = homedir()): Set<string> {
       const reg = JSON.parse(readFileSync(join(home, '.claude', 'sessions', f), 'utf8')) as {
         pid?: number;
         sessionId?: string;
-        procStart?: number;
+        procStart?: number | string; // registry stores this as a STRING in practice
       };
       if (typeof reg.pid !== 'number' || typeof reg.sessionId !== 'string') continue;
-      if (procStartField(reg.pid) === reg.procStart) ids.add(reg.sessionId);
+      // Normalize both sides: /proc gives a number, the registry gives a string.
+      const live = procStartField(reg.pid);
+      if (live !== undefined && reg.procStart !== undefined && String(live) === String(reg.procStart)) {
+        ids.add(reg.sessionId);
+      }
     } catch {
       // unreadable/foreign registry entry — ignore
     }
