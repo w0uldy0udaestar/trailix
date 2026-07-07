@@ -66,8 +66,24 @@ export function toolCall(tool: string, input: Record<string, unknown>, result: O
   return [assistantToolUse({ tool, input, toolUseId }), toolResult({ toolUseId, ...result })];
 }
 
-export function read(filePath: string): string[] {
-  return toolCall('Read', { file_path: filePath }, { content: 'file contents' });
+export function read(filePath: string, content = 'file contents'): string[] {
+  return toolCall('Read', { file_path: filePath }, { content });
+}
+
+export function readPartial(filePath: string, opts: { limit?: number; offset?: number } = {}, content = 'partial'): string[] {
+  return toolCall('Read', { file_path: filePath, limit: opts.limit ?? 40, offset: opts.offset }, { content });
+}
+
+export function webFetch(url: string, content = 'page text'): string[] {
+  return toolCall('WebFetch', { url }, { content });
+}
+
+export function webSearch(query = 'q', content = 'results'): string[] {
+  return toolCall('WebSearch', { query }, { content });
+}
+
+export function agent(prompt = 'go'): string[] {
+  return [assistantToolUse({ tool: 'Agent', input: { prompt } })];
 }
 
 export function edit(filePath: string): string[] {

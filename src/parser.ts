@@ -91,6 +91,7 @@ function textOf(content: unknown): string {
 interface Rec {
   [key: string]: unknown;
   type?: string;
+  timestamp?: string;
   isMeta?: boolean;
   isSidechain?: boolean;
   origin?: { kind?: string };
@@ -136,7 +137,7 @@ export async function parseSessionLines(lines: AsyncIterable<string> | Iterable<
   const pendingResults = new Map<string, ToolResultMeta>();
   let seq = 0;
 
-  const ingestToolUse = (block: { id?: string; name?: string; input?: { file_path?: unknown; notebook_path?: unknown; command?: unknown } }): void => {
+  const ingestToolUse = (block: { id?: string; name?: string; input?: { file_path?: unknown; notebook_path?: unknown; command?: unknown; limit?: unknown; offset?: unknown; url?: unknown } }): void => {
     const tool = typeof block.name === 'string' ? block.name : '(unknown)';
     // NotebookEdit records its target as notebook_path, not file_path
     const filePath = typeof block.input?.file_path === 'string'
@@ -144,6 +145,9 @@ export async function parseSessionLines(lines: AsyncIterable<string> | Iterable<
       : typeof block.input?.notebook_path === 'string' ? block.input.notebook_path : undefined;
     const rawCommand = typeof block.input?.command === 'string' ? block.input.command : undefined;
     const command = rawCommand?.slice(0, MAX_COMMAND_LENGTH);
+    const readLimit = typeof block.input?.limit === 'number' ? block.input.limit : undefined;
+    const readOffset = typeof block.input?.offset === 'number' ? block.input.offset : undefined;
+    const url = typeof block.input?.url === 'string' ? block.input.url : undefined;
 
     if (SUBAGENT_TOOLS.has(tool)) stats.usedSubagents = true;
 
@@ -155,7 +159,7 @@ export async function parseSessionLines(lines: AsyncIterable<string> | Iterable<
       stats.eventsTruncated = true;
       return;
     }
-    const event: ToolEvent = { seq: seq++, tool, filePath, command, self: false };
+    const event: ToolEvent = { seq: seq++, tool, filePath, command, readLimit, readOffset, url, self: false };
     if (typeof block.id === 'string') {
       const pending = pendingResults.get(block.id);
       if (pending !== undefined) {
@@ -190,6 +194,11 @@ export async function parseSessionLines(lines: AsyncIterable<string> | Iterable<
   };
 
   const ingest = (rec: Rec): void => {
+    const ts = typeof rec.timestamp === 'string' ? Date.parse(rec.timestamp) : NaN;
+    if (!Number.isNaN(ts)) {
+      if (stats.firstTs === undefined || ts < stats.firstTs) stats.firstTs = ts;
+      if (stats.lastTs === undefined || ts > stats.lastTs) stats.lastTs = ts;
+    }
     const type = rec.type;
     if (typeof type !== 'string') {
       stats.unknownTypeCount += 1;

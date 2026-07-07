@@ -16,6 +16,12 @@ export interface ToolEvent {
   filePath?: string;
   /** input.command for Bash (capped — we never keep large payloads). */
   command?: string;
+  /** input.limit for Read (partial-read signal for rule ③). */
+  readLimit?: number;
+  /** input.offset for Read (partial-read signal for rule ③). */
+  readOffset?: number;
+  /** input.url for WebFetch (source domain for rule ②). */
+  url?: string;
   /** Result metadata, joined by tool_use_id even when lines are out of order. */
   result?: ToolResultMeta;
   /** True when this event was caused by trailix itself (excluded from scoring). */
@@ -53,6 +59,10 @@ export interface SessionStats {
   unknownRatio: number;
   /** Event cap hit — session is unscorable rather than partially scored. */
   eventsTruncated: boolean;
+  /** Earliest record timestamp (epoch ms), for session duration. */
+  firstTs?: number;
+  /** Latest record timestamp (epoch ms), for session duration. */
+  lastTs?: number;
 }
 
 export type Verdict = 'pass' | 'caution' | 'poor' | 'no_verdict';
