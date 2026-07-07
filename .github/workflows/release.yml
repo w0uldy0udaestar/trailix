@@ -23,8 +23,13 @@ jobs:
       - run: npm ci
       - run: npm run typecheck
       - run: npm test
-      - run: npm publish --provenance --access public
+      # Skips cleanly if NPM_TOKEN isn't set (e.g. the first release was
+      # published manually) — no red X on a version that's already live.
+      - name: Publish to npm
+        if: ${{ env.NPM_TOKEN != '' }}
+        run: npm publish --provenance --access public
         env:
+          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
       - name: GitHub Release
         run: gh release create "$GITHUB_REF_NAME" --title "$GITHUB_REF_NAME" --notes "See [CHANGELOG.md](./CHANGELOG.md). Install: \`npx trailix\` (Node 24+)."
