@@ -34,14 +34,14 @@ export interface Rule3Breakdown {
 }
 
 export function analyzeRule3(stats: SessionStats): Rule3Breakdown {
-  // First pass: earliest edit seq per file.
+  // First pass: earliest edit seq per file. Write-create is excluded (nothing
+  // existed to read — consistent with facts.ts); Write-update counts as an edit.
   const firstEdit = new Map<string, number>();
-  const EDITS = new Set(['Edit', 'MultiEdit', 'NotebookEdit', 'Write']);
+  const EDITS = new Set(['Edit', 'MultiEdit', 'NotebookEdit']);
   for (const e of stats.events) {
-    if (e.filePath === undefined) continue;
-    if (EDITS.has(e.tool) && succeeded(e) && !firstEdit.has(e.filePath)) {
-      firstEdit.set(e.filePath, e.seq);
-    }
+    if (e.filePath === undefined || !succeeded(e)) continue;
+    const isEdit = EDITS.has(e.tool) || (e.tool === 'Write' && e.result?.writeKind === 'update');
+    if (isEdit && !firstEdit.has(e.filePath)) firstEdit.set(e.filePath, e.seq);
   }
 
   // Second pass: reads per file that occur before that file's first edit.

@@ -24,9 +24,9 @@ test('rule2: one domain across many fetches → caution (thin)', async () => {
   assert.match(r.evidence[0] ?? '', /1 unique source domain/);
 });
 
-test('rule2: search-only (no fetches) → caution (0 domains)', async () => {
+test('rule2: search-only (no fetches) → no verdict (domains unavailable, not "0 sources")', async () => {
   const r = evaluateRule2(await parse(session(webSearch(), webSearch())));
-  assert.equal(r.verdict, 'caution');
+  assert.equal(r.verdict, 'no_verdict');
 });
 
 test('rule2: a single incidental web action → no verdict (not a research turn)', async () => {

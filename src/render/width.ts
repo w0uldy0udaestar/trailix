@@ -21,12 +21,12 @@ const WIDE: Array<[number, number]> = [
   [0x20000, 0x3fffd], // CJK ext B+
 ];
 
-/** Zero-width: combining marks, ZWJ, variation selectors. */
+/** Zero-width: combining marks, ZWJ, variation selectors (kept ascending). */
 const ZERO: Array<[number, number]> = [
   [0x0300, 0x036f],
+  [0x1ab0, 0x1aff],
   [0x200b, 0x200f],
   [0xfe00, 0xfe0f],
-  [0x1ab0, 0x1aff],
 ];
 
 function inRanges(cp: number, ranges: Array<[number, number]>): boolean {
@@ -59,31 +59,50 @@ export function stringWidth(s: string): number {
   return w;
 }
 
-/** Truncate to a max display width, appending "…" (kept within the budget). */
+/**
+ * Truncate to a max display width, appending "…" within the budget. ANSI-aware:
+ * SGR escapes pass through at zero width and an open colour is closed with a
+ * reset so a clamped coloured string never bleeds.
+ */
 export function clampWidth(s: string, max: number): string {
   if (stringWidth(s) <= max) return s;
   if (max <= 1) return '…';
   let w = 0;
   let out = '';
-  for (const ch of s) {
+  let openColor = false;
+  const chars = [...s];
+  for (let i = 0; i < chars.length; i++) {
+    const ch = chars[i] as string;
+    if (ch === '\x1b' && chars[i + 1] === '[') {
+      let seq = ch;
+      let j = i + 1;
+      while (j < chars.length && (chars[j] as string) !== 'm') seq += chars[j++] as string;
+      if (j < chars.length) seq += chars[j];
+      out += seq;
+      openColor = seq !== '\x1b[0m';
+      i = j;
+      continue;
+    }
     const cw = charWidth(ch.codePointAt(0) as number);
     if (w + cw > max - 1) break;
     out += ch;
     w += cw;
   }
-  return out + '…';
+  return out + '…' + (openColor ? '\x1b[0m' : '');
 }
 
 /** Middle-ellipsis a path: "src/…/parser.ts" keeping head and tail. */
 export function middleEllipsis(path: string, max: number): string {
   if (stringWidth(path) <= max) return path;
+  if (max < 4) return clampWidth(path, max);
   const parts = path.split('/');
   if (parts.length <= 2) return clampWidth(path, max);
   const tail = parts[parts.length - 1] as string;
   const head = parts[0] as string;
   const candidate = `${head}/…/${tail}`;
   if (stringWidth(candidate) <= max) return candidate;
-  return `…/${clampWidth(tail, max - 2)}`;
+  // keep the filename tail visible even when head+tail won't both fit
+  return clampWidth(`…/${tail}`, max);
 }
 
 export function padEndWidth(s: string, width: number): string {
@@ -102,6 +121,9 @@ export function wrapText(s: string, width: number): string[] {
     if (stringWidth(candidate) > width && line !== '') {
       lines.push(line);
       line = stringWidth(word) > width ? clampWidth(word, width) : word;
+    } else if (line === '' && stringWidth(word) > width) {
+      // over-long leading word: clamp so no line ever exceeds the budget
+      line = clampWidth(word, width);
     } else {
       line = candidate;
     }
