@@ -26,7 +26,11 @@ interface HookStdin {
 export async function runHook(stdinText: string, env: NodeJS.ProcessEnv = process.env): Promise<string> {
   let input: HookStdin;
   try {
-    input = JSON.parse(stdinText) as HookStdin;
+    const parsed: unknown = JSON.parse(stdinText);
+    // JSON.parse('null') succeeds and returns null; guard before dereferencing
+    // so the documented "never throws" invariant holds here, not just in bin.
+    if (parsed === null || typeof parsed !== 'object') return '';
+    input = parsed as HookStdin;
   } catch {
     return '';
   }

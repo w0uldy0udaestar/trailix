@@ -38,10 +38,17 @@ const MAX_COMMAND_LENGTH = 2000;
  */
 export const MAX_EVENTS = 200_000;
 
-/** Non-human user-record content prefixes (pre-`origin` log versions). */
+/**
+ * Content prefixes that mark a user-role record as NOT a real human turn:
+ * slash-command scaffolding, bash-mode I/O, and background notifications.
+ * These arrive with no `origin`, so they reach the prefix check — and are
+ * verified against real logs (v2.1.x). Checked before origin so a turn label
+ * and the Stop-hook gate are never inflated/reset by command noise.
+ */
 const NOISE_PREFIXES = [
   '<task-notification>', '<local-command-stdout>', '<local-command-stderr>',
-  '<local-command-caveat>', '<bash-stdout>', '<bash-stderr>',
+  '<local-command-caveat>', '<bash-stdout>', '<bash-stderr>', '<bash-input>',
+  '<command-name>', '<command-message>', '<command-args>', '<command-contents>',
 ];
 
 /**
@@ -106,10 +113,13 @@ function isHumanInput(rec: Rec): boolean {
   if (message === undefined || message.role !== 'user') return false;
   const content = message.content;
   if (Array.isArray(content) && content.some((b) => (b as { type?: string })?.type === 'tool_result')) return false;
-  if (rec.origin !== undefined) return rec.origin.kind === 'human';
-  if (typeof rec.promptSource === 'string') return rec.promptSource !== 'system';
+  // Command/bash/notification noise is filtered by content prefix FIRST, so an
+  // origin='human' command-output record can't be miscounted as a real turn.
   const text = textOf(content).trimStart();
-  return !NOISE_PREFIXES.some((p) => text.startsWith(p));
+  if (NOISE_PREFIXES.some((p) => text.startsWith(p))) return false;
+  if (rec.origin !== undefined && rec.origin !== null) return rec.origin.kind === 'human';
+  if (typeof rec.promptSource === 'string') return rec.promptSource !== 'system';
+  return true;
 }
 
 export async function parseSessionFile(filePath: string): Promise<SessionStats> {

@@ -62,6 +62,14 @@ test('counts only true human inputs, not tool_result carriers or notifications',
   assert.equal(stats.humanInputCount, 1);
 });
 
+test('slash-command and bash-mode records are not counted as human turns', async () => {
+  // real logs: these arrive with no origin and reach the prefix check
+  const slash = JSON.stringify({ type: 'user', isSidechain: false, isMeta: false, message: { role: 'user', content: '<command-name>/effort</command-name>\n  ' } });
+  const bashIn = JSON.stringify({ type: 'user', isSidechain: false, isMeta: false, message: { role: 'user', content: '<bash-input> npm login</bash-input>' } });
+  const stats = await parseSessionLines([...session(read('/p/a.ts')), slash, bashIn]);
+  assert.equal(stats.humanInputCount, 1); // only the real "do the task" input
+});
+
 test('excludes trailix self-invocations from scoring (pollution filter)', async () => {
   const stats = await parseSessionLines(session(
     bash('npx trailix --done'),

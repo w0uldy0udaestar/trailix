@@ -5,8 +5,7 @@
   "license": "MIT",
   "type": "module",
   "bin": {
-    "trailix": "bin/trailix.ts",
-    "range": "bin/trailix.ts"
+    "trailix": "bin/trailix.ts"
   },
   "repository": {
     "type": "git",
