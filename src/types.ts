@@ -51,6 +51,8 @@ export interface SessionStats {
   incompleteLastLine: boolean;
   /** unknownTypeCount / parsedRecords; > threshold ⇒ session is unscorable. */
   unknownRatio: number;
+  /** Event cap hit — session is unscorable rather than partially scored. */
+  eventsTruncated: boolean;
 }
 
 export type Verdict = 'pass' | 'caution' | 'poor' | 'no_verdict';

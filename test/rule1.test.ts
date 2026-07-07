@@ -2,7 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { parseSessionLines } from '../src/parser.ts';
 import { evaluateRule1, bashReadPaths } from '../src/rules/rule1.ts';
-import { assistantToolUse, bash, edit, editBlockedUnread, read, session, write } from './helpers/fixture.ts';
+import { assistantToolUse, bash, danglingEdit, edit, editBlockedUnread, notebookEdit, read, session, write, writeBlockedUnread } from './helpers/fixture.ts';
 
 async function rule1For(lines: string[], options = {}) {
   return evaluateRule1(await parseSessionLines(lines), options);
@@ -58,6 +58,37 @@ test('subagent usage annotates and caps at caution', async () => {
   assert.equal(r.annotations.length, 1);
 });
 
+test('①-a also fires on blocked blind Write (overwrite rejection)', async () => {
+  const r = await rule1For(session(writeBlockedUnread('/p/a.ts')));
+  assert.equal(r.verdict, 'caution');
+  assert.match(r.evidence[0] ?? '', /1 blind-edit attempt/);
+});
+
+test('unread NotebookEdit fires ①-b via notebook_path', async () => {
+  const r = await rule1For(session(notebookEdit('/p/analysis.ipynb')));
+  assert.equal(r.verdict, 'caution');
+  assert.match(r.evidence[0] ?? '', /analysis\.ipynb/);
+});
+
+test('dangling edits (no recorded outcome) never count as unread', async () => {
+  // review finding: a truncated parallel edit batch produced a false 'poor'
+  const withOthers = await rule1For(session(
+    read('/p/a.ts'), edit('/p/a.ts'),
+    danglingEdit('/p/x.ts'), danglingEdit('/p/y.ts'), danglingEdit('/p/z.ts'),
+  ));
+  assert.equal(withOthers.verdict, 'pass');
+  assert.equal(withOthers.annotations.some((a) => /unrecorded/.test(a)), true);
+
+  const onlyDangling = await rule1For(session(danglingEdit('/p/x.ts')));
+  assert.equal(onlyDangling.verdict, 'no_verdict');
+});
+
+test('Write-create-only session gets no verdict, not a false pass', async () => {
+  const r = await rule1For(session(write('/p/new.ts', 'create')));
+  assert.equal(r.verdict, 'no_verdict');
+  assert.equal(r.evidence.length, 0);
+});
+
 // ── not firing (read channels) ────────────────────────────────────────────
 
 test('Read before Edit passes', async () => {
@@ -102,12 +133,57 @@ test('files created by Write in-session are exempt (nothing existed to read)', a
   assert.equal(r.verdict, 'pass');
 });
 
-test('auto-injected context files are exempt (CLAUDE.md / memory)', async () => {
+test('auto-injected context files are exempt (CLAUDE.md / auto-memory)', async () => {
   const r = await rule1For(session(
     edit('/home/me/proj/CLAUDE.md'),
     edit('/home/me/.claude/projects/x/memory/MEMORY.md'),
   ));
   assert.equal(r.verdict, 'pass');
+});
+
+test("a repo's own memory/ directory is NOT the injected auto-memory", async () => {
+  // review finding: the old wildcard excused any project's memory/*.md
+  const r = await rule1For(session(edit('/home/me/proj/memory/notes.md')));
+  assert.equal(r.verdict, 'caution');
+});
+
+test('quoted pipes/semicolons in patterns do not break path extraction', async () => {
+  // review finding: 2 of 3 real-corpus ①-b firings were this false positive
+  const r = await rule1For(session(
+    bash("grep -n 'foo|bar' /p/a.ts; sed -n '1,10p;20p' /p/b.ts"),
+    edit('/p/a.ts'),
+    edit('/p/b.ts'),
+  ));
+  assert.equal(r.verdict, 'pass');
+});
+
+test('filename-shaped grep PATTERN cannot excuse a genuinely unread file', async () => {
+  // review finding: pattern operand was collected as a path (missed firing)
+  const r = await rule1For(session(
+    bash('grep unread.ts src/other.txt'),
+    edit('/p/unread.ts'),
+  ));
+  assert.equal(r.verdict, 'caution');
+});
+
+test('extensionless direct reads excuse the file (cat Makefile)', async () => {
+  const r = await rule1For(session(bash('cat Makefile'), edit('/p/Makefile')));
+  assert.equal(r.verdict, 'pass');
+});
+
+test('quoted paths with parentheses/brackets are real paths, not patterns', async () => {
+  // real-corpus regression: cat "src/app/(dashboard)/settings/page.tsx"
+  const r = await rule1For(session(
+    bash('cat "src/app/(dashboard)/settings/page.tsx" && cat "src/pages/[id].tsx"'),
+    edit('/home/me/proj/src/app/(dashboard)/settings/page.tsx'),
+    edit('/home/me/proj/src/pages/[id].tsx'),
+  ));
+  assert.equal(r.verdict, 'pass');
+});
+
+test('unquoted shell globs are not collected as paths', () => {
+  const paths = bashReadPaths('cat src/*.ts');
+  assert.equal(paths.length, 0);
 });
 
 test('order-inverted Read result still excuses the later edit', async () => {
