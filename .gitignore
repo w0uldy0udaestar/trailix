@@ -1,0 +1,24 @@
+# dependencies / build
+node_modules/
+dist/
+
+# secrets
+.env
+.env.*
+!.env.example
+
+# local-only: spike artifacts contain real session paths/IDs from this machine.
+# Public fixtures must go through the sanitizer (design doc, Next Steps 7).
+spike/
+
+# local-only: internal spike/verification reports reference real local paths.
+docs/day0-spike-report.html
+docs/day1-spike-report.html
+docs/how-it-works.html
+
+# local claude settings (per-machine)
+.claude/settings.local.json
+
+# misc
+*.log
+.DS_Store
