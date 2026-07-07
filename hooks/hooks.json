@@ -5,7 +5,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "node \"$CLAUDE_PLUGIN_ROOT/../bin/trailix-hook.ts\"",
+            "command": "node \"$CLAUDE_PLUGIN_ROOT/bin/trailix-hook.ts\"",
             "timeout": 5
           }
         ]

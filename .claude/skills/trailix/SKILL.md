@@ -12,13 +12,13 @@ Run trailix against the **current session** and show the result verbatim.
 1. Run this command (it reads the live session via `$CLAUDE_CODE_SESSION_ID` and prints a Markdown card):
 
    ```bash
-   npx trailix --self --format md
+   node "$CLAUDE_PLUGIN_ROOT/bin/trailix.ts" --self --format md
    ```
 
-   If `npx trailix` is not available, fall back to the plugin's bundled entry:
+   If that isn't available, fall back to the published CLI:
 
    ```bash
-   node "$CLAUDE_PLUGIN_ROOT/../bin/trailix.ts" --self --format md
+   npx trailix --self --format md
    ```
 
 2. Show the command's output **exactly as printed** — it is already a formatted report card (verdict, evidence lines, facts). Do not summarize, reword, or add interpretation unless the user asks a follow-up.
