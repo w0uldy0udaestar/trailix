@@ -72,6 +72,26 @@ trailix is a **read-only observer**. It follows three invariants:
 
 Local only. Zero runtime dependencies. Nothing leaves your machine.
 
+## FAQ
+
+**Does it send my code or sessions anywhere?**
+No. trailix reads your local session logs and prints to your terminal. There is
+no network call, no telemetry, no account. (To share a session in a bug report,
+`node scripts/sanitize.ts` redacts secrets and paths first.)
+
+**Won't a rule-based grader produce false positives?**
+That's the failure mode it's designed against. Every threshold is calibrated
+against real session history (see the [CHANGELOG](./CHANGELOG.md) and
+`scripts/backtest.ts`), a rule that can't be sure returns `no verdict` instead
+of guessing, and anything uncertain is capped at `caution` — never `poor` on a
+hunch. The flagship rule was retuned when the backtest showed it firing on 61%
+of sessions; it now fires on ~13%, all genuine.
+
+**Why rules instead of asking an LLM to judge the session?**
+Because you can't audit an audit you can't reproduce. Rules are deterministic,
+every verdict cites the exact evidence from your log, there's no token cost, and
+the result is the same every run. An LLM judge would be a vibe with extra steps.
+
 ## Status
 
 **Pre-release.** Engine, CLI, Stop hook and skill are implemented and tested
