@@ -22,3 +22,4 @@ docs/how-it-works.html
 # misc
 *.log
 .DS_Store
+.gstack/
