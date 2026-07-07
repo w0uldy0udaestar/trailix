@@ -1,5 +1,9 @@
 # trailix
 
+[![CI](https://github.com/w0uldy0udaestar/trailix/actions/workflows/ci.yml/badge.svg)](https://github.com/w0uldy0udaestar/trailix/actions/workflows/ci.yml)
+[![npm](https://img.shields.io/npm/v/trailix)](https://www.npmjs.com/package/trailix)
+[![license: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](./LICENSE)
+
 **How thorough was your AI agent, really?**
 
 You delegate a task to Claude Code, it works for twenty minutes, and hands back
