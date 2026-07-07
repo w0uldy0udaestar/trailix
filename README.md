@@ -34,6 +34,7 @@ shown as `◌ no verdict`, never guessed.
 ## Try it
 
 ```bash
+npx trailix demo      # show an example card (no session needed)
 npx trailix           # grade the most recent session in this project
 npx trailix --done    # grade the session that just ended (from a new terminal)
 npx trailix list      # list recent sessions

@@ -2,6 +2,7 @@ import { parseSessionFile } from './parser.ts';
 import { buildCard } from './card.ts';
 import { renderCli, renderSkill } from './render/index.ts';
 import { detectLang } from './messages.ts';
+import { demoCard } from './demo.ts';
 import { listProjectSessions, selectLatestSession, selfSession, type SessionFile } from './session-select.ts';
 import type { Lang } from './types.ts';
 
@@ -28,6 +29,7 @@ const HELP = `trailix — how thorough was your delegated Claude Code work?
 usage:
   trailix [last]        grade the most recent session in this project
   trailix list          list recent sessions in this project
+  trailix demo          show an example card (no session needed)
   trailix --help        show this help
 
 options:
@@ -37,7 +39,7 @@ options:
 `;
 
 interface ParsedArgs {
-  command: 'last' | 'list' | 'help';
+  command: 'last' | 'list' | 'help' | 'demo';
   done: boolean;
   ascii: boolean;
   self: boolean;
@@ -69,6 +71,7 @@ function parseArgs(argv: string[]): ParsedArgs {
       if (a === 'list') out.command = 'list';
       else if (a === 'last') out.command = 'last';
       else if (a === 'help') out.command = 'help';
+      else if (a === 'demo') out.command = 'demo';
     }
   }
   return out;
@@ -100,6 +103,11 @@ export async function runCli(io: CliIO, now = Date.now()): Promise<CliResult> {
   const lang: Lang = args.lang ?? detectLang(io.env);
 
   if (args.command === 'help') return { exitCode: 0, stdout: HELP };
+
+  if (args.command === 'demo') {
+    const card = await demoCard(lang);
+    return { exitCode: 0, stdout: renderCli(card, { env: io.env, isTTY: io.isTTY, termWidth: io.termWidth, ascii: args.ascii }) + '\n' };
+  }
 
   if (args.command === 'list') {
     const sessions = listProjectSessions({ cwd: io.cwd, home: io.env['HOME'] });
