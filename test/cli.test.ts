@@ -102,6 +102,14 @@ test('--self falls back to the latest session when no session id is set', async 
   assert.notEqual(r.stdout.trim(), '');
 });
 
+test('demo renders a self-contained caution card with edits counted', async () => {
+  const r = await runCli(io({ argv: ['demo'], env: { NO_COLOR: '1' }, isTTY: true }));
+  assert.equal(r.exitCode, 0);
+  assert.match(r.stdout, /caution/);
+  assert.match(r.stdout, /edited 4/); // guards the tool_use/result id-pairing bug
+  assert.match(r.stdout, /deep 1 · skim 3/);
+});
+
 test('--help prints usage', async () => {
   const r = await runCli(io({ argv: ['--help'] }));
   assert.match(r.stdout, /usage:/);
