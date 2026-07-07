@@ -31,6 +31,13 @@ export const UNKNOWN_RATIO_LIMIT = 0.2;
 
 const MAX_COMMAND_LENGTH = 2000;
 
+/**
+ * Hard cap on retained tool events (streaming-principle backstop; a real
+ * session never comes close). Beyond it the session is honestly unscorable
+ * rather than partially scored. Provisional — CHANGELOG on change.
+ */
+export const MAX_EVENTS = 200_000;
+
 /** Non-human user-record content prefixes (pre-`origin` log versions). */
 const NOISE_PREFIXES = [
   '<task-notification>', '<local-command-stdout>', '<local-command-stderr>',
@@ -40,12 +47,19 @@ const NOISE_PREFIXES = [
 /**
  * trailix must not score its own footprint (read-only observer, principle ③).
  * A Bash event is "self" only when trailix is in command position — the word
- * appearing inside commit messages or file contents must not match.
+ * appearing inside commit messages or file contents must not match, so quoted
+ * spans are blanked before testing. Command position includes new lines,
+ * subshells and common runners (npx/bunx/pnpm/yarn/node), and path-form
+ * invocations (./trailix, dist/trailix.js).
  */
-const SELF_INVOCATION = /(?:^|;|&&|\|{1,2}|\$\()\s*(?:npx\s+)?trailix(?:\s|$)/;
+const SELF_INVOCATION = /(?:^|[;&|`\n(]|\$\()\s*(?:(?:npx|bunx|node|yarn(?:\s+dlx)?|pnpm\s+(?:dlx|exec))\s+)?(?:[^\s;&|'"`]*\/)?trailix(?:\.[cm]?js)?(?=\s|$)/;
+
+function stripQuoted(command: string): string {
+  return command.replace(/"(?:[^"\\]|\\.)*"|'[^']*'/g, '""');
+}
 
 function isSelfEvent(tool: string, filePath?: string, command?: string): boolean {
-  if (command !== undefined && SELF_INVOCATION.test(command)) return true;
+  if (command !== undefined && SELF_INVOCATION.test(stripQuoted(command))) return true;
   if (filePath !== undefined && filePath.includes('/.cache/trailix/')) return true;
   return false;
 }
@@ -115,15 +129,19 @@ export async function parseSessionLines(lines: AsyncIterable<string> | Iterable<
     unknownTypeCount: 0,
     incompleteLastLine: false,
     unknownRatio: 0,
+    eventsTruncated: false,
   };
 
   const eventById = new Map<string, ToolEvent>();
   const pendingResults = new Map<string, ToolResultMeta>();
   let seq = 0;
 
-  const ingestToolUse = (block: { id?: string; name?: string; input?: { file_path?: unknown; command?: unknown } }): void => {
+  const ingestToolUse = (block: { id?: string; name?: string; input?: { file_path?: unknown; notebook_path?: unknown; command?: unknown } }): void => {
     const tool = typeof block.name === 'string' ? block.name : '(unknown)';
-    const filePath = typeof block.input?.file_path === 'string' ? block.input.file_path : undefined;
+    // NotebookEdit records its target as notebook_path, not file_path
+    const filePath = typeof block.input?.file_path === 'string'
+      ? block.input.file_path
+      : typeof block.input?.notebook_path === 'string' ? block.input.notebook_path : undefined;
     const rawCommand = typeof block.input?.command === 'string' ? block.input.command : undefined;
     const command = rawCommand?.slice(0, MAX_COMMAND_LENGTH);
 
@@ -131,6 +149,10 @@ export async function parseSessionLines(lines: AsyncIterable<string> | Iterable<
 
     if (isSelfEvent(tool, filePath, command)) {
       stats.selfEventCount += 1;
+      return;
+    }
+    if (stats.events.length >= MAX_EVENTS) {
+      stats.eventsTruncated = true;
       return;
     }
     const event: ToolEvent = { seq: seq++, tool, filePath, command, self: false };
@@ -225,5 +247,5 @@ export async function parseSessionLines(lines: AsyncIterable<string> | Iterable<
 }
 
 export function isScorable(stats: SessionStats): boolean {
-  return stats.unknownRatio <= UNKNOWN_RATIO_LIMIT;
+  return stats.unknownRatio <= UNKNOWN_RATIO_LIMIT && !stats.eventsTruncated;
 }

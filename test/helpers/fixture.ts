@@ -86,6 +86,19 @@ export function bash(command: string, output = 'ok'): string[] {
   return toolCall('Bash', { command }, { content: output });
 }
 
+export function writeBlockedUnread(filePath: string): string[] {
+  return toolCall('Write', { file_path: filePath }, { isError: true, content: 'File has not been read yet. Read it first before writing to it.' });
+}
+
+export function notebookEdit(notebookPath: string): string[] {
+  return toolCall('NotebookEdit', { notebook_path: notebookPath }, { content: 'edited' });
+}
+
+/** tool_use whose result was never written (live/aborted session). */
+export function danglingEdit(filePath: string): string[] {
+  return [assistantToolUse({ tool: 'Edit', input: { file_path: filePath } })];
+}
+
 export function session(...parts: (string | string[])[]): string[] {
   return [humanInput('do the task'), ...parts.flat()];
 }

@@ -33,6 +33,10 @@ const CATALOG = {
     en: 'reads from a prior session not verifiable',
     ko: '이전 열람 미확인',
   },
+  'annotation.editUnresolved': {
+    en: '{n} edit outcome(s) unrecorded — live/aborted session',
+    ko: '편집 결과 미기록 {n}건 — 라이브/중단 세션',
+  },
   'list.more': {
     en: ' and {n} more',
     ko: ' 외 {n}개',

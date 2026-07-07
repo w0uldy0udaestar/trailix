@@ -72,6 +72,38 @@ test('excludes trailix self-invocations from scoring (pollution filter)', async 
   assert.match(stats.events[0]?.command ?? '', /git commit/);
 });
 
+test('pollution filter ignores trailix after separators INSIDE quoted strings', async () => {
+  // review finding: '; trailix' in a commit message flipped the whole Bash
+  // event to self, silently deleting the bash-untracked annotation
+  const stats = await parseSessionLines(session(
+    bash('git commit -m "fix parser; trailix handles it"'),
+    bash("echo 'run && trailix later'"),
+  ));
+  assert.equal(stats.selfEventCount, 0);
+  assert.equal(stats.events.length, 2);
+});
+
+test('pollution filter catches multiline, runner and path-form self-invocations', async () => {
+  const stats = await parseSessionLines(session(
+    bash('npm test\nnpx trailix score'),
+    bash('bunx trailix score'),
+    bash('pnpm exec trailix score'),
+    bash('node dist/trailix.js last'),
+    bash('./trailix last'),
+    bash('cat src/trailix.ts'), // reading trailix source is NOT an invocation
+  ));
+  assert.equal(stats.selfEventCount, 5);
+  assert.equal(stats.events.length, 1);
+  assert.match(stats.events[0]?.command ?? '', /cat src/);
+});
+
+test('NotebookEdit target is extracted from notebook_path', async () => {
+  const stats = await parseSessionLines(session(
+    [assistantToolUse({ tool: 'NotebookEdit', input: { notebook_path: '/p/analysis.ipynb' } })],
+  ));
+  assert.equal(stats.events[0]?.filePath, '/p/analysis.ipynb');
+});
+
 test('flags subagent usage', async () => {
   const stats = await parseSessionLines(session(
     [assistantToolUse({ tool: 'Agent', input: { prompt: 'go' } })],
