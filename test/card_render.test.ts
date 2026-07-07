@@ -25,7 +25,7 @@ test('activity but every rule abstains → no_verdict card keeps facts', async (
 
 test('normal card carries verdicts + facts + notes', async () => {
   const card = buildCard(await parse(session(
-    editBlockedUnread('/p/a.ts'), read('/p/a.ts'), edit('/p/a.ts'),
+    editBlockedUnread('/p/a.ts'), editBlockedUnread('/p/a.ts'), editBlockedUnread('/p/a.ts'), read('/p/a.ts'), edit('/p/a.ts'),
     webFetch('https://one.com/x'),
     agent('a'), agent('b'),
   )), { lang: 'ko', dateLabel: '07-07', durationLabel: '22분' });
@@ -54,7 +54,7 @@ test('CLI applies ANSI colour when TTY and colour allowed', async () => {
 });
 
 test('CLI --ascii is pure ASCII (glyphs + no box + folded punctuation)', async () => {
-  const card = buildCard(await parse(session(editBlockedUnread('/p/a.ts'), read('/p/a.ts'), edit('/p/a.ts'))), { lang: 'en' });
+  const card = buildCard(await parse(session(editBlockedUnread('/p/a.ts'), editBlockedUnread('/p/a.ts'), editBlockedUnread('/p/a.ts'), read('/p/a.ts'), edit('/p/a.ts'))), { lang: 'en' });
   const out = renderCli(card, { env: { NO_COLOR: '1' }, isTTY: false, termWidth: 60, ascii: true });
   assert.equal(out.includes('╭'), false);
   assert.equal(/\[OK\]|\[!\]|\[X\]/.test(out), true);
@@ -71,7 +71,7 @@ test('CLI Korean box stays aligned (wcwidth)', async () => {
 });
 
 test('CLI header grade word follows the card language, not the env', async () => {
-  const card = buildCard(await parse(session(editBlockedUnread('/p/a.ts'), read('/p/a.ts'), edit('/p/a.ts'))), { lang: 'ko' });
+  const card = buildCard(await parse(session(editBlockedUnread('/p/a.ts'), editBlockedUnread('/p/a.ts'), editBlockedUnread('/p/a.ts'), read('/p/a.ts'), edit('/p/a.ts'))), { lang: 'ko' });
   const out = renderCli(card, { env: { NO_COLOR: '1', LANG: 'en_US.UTF-8' }, isTTY: true, termWidth: 80 });
   assert.match(out, /주의/);
   assert.equal(/caution/.test(out.split('\n').slice(0, 3).join('')), false);

@@ -10,15 +10,21 @@ async function rule1For(lines: string[], options = {}) {
 
 // ── firing ────────────────────────────────────────────────────────────────
 
-test('①-a fires on blind-edit attempts blocked by the harness', async () => {
-  const r = await rule1For(session(
-    editBlockedUnread('/p/a.ts'),
-    editBlockedUnread('/p/a.ts'),
-    read('/p/a.ts'),
-    edit('/p/a.ts'),
+test('①-a fires only at >=3 blocked attempts (T4 calibration)', async () => {
+  const three = await rule1For(session(
+    editBlockedUnread('/p/a.ts'), editBlockedUnread('/p/a.ts'), editBlockedUnread('/p/a.ts'),
+    read('/p/a.ts'), edit('/p/a.ts'),
   ));
-  assert.equal(r.verdict, 'caution');
-  assert.match(r.evidence[0] ?? '', /2 blind-edit attempt/);
+  assert.equal(three.verdict, 'caution');
+  assert.match(three.evidence[0] ?? '', /3 blind-edit attempt/);
+});
+
+test('1-2 blocked attempts then corrected = normal self-correction → pass', async () => {
+  const r = await rule1For(session(
+    editBlockedUnread('/p/a.ts'), editBlockedUnread('/p/a.ts'),
+    read('/p/a.ts'), edit('/p/a.ts'),
+  ));
+  assert.equal(r.verdict, 'pass');
 });
 
 test('①-b fires on a successful edit with no trace of reading (clean session)', async () => {
@@ -58,10 +64,12 @@ test('subagent usage annotates and caps at caution', async () => {
   assert.equal(r.annotations.length, 1);
 });
 
-test('①-a also fires on blocked blind Write (overwrite rejection)', async () => {
-  const r = await rule1For(session(writeBlockedUnread('/p/a.ts')));
+test('①-a also counts blocked blind Write (overwrite rejection)', async () => {
+  const r = await rule1For(session(
+    writeBlockedUnread('/p/a.ts'), writeBlockedUnread('/p/b.ts'), writeBlockedUnread('/p/c.ts'),
+  ));
   assert.equal(r.verdict, 'caution');
-  assert.match(r.evidence[0] ?? '', /1 blind-edit attempt/);
+  assert.match(r.evidence[0] ?? '', /3 blind-edit attempt/);
 });
 
 test('unread NotebookEdit fires ①-b via notebook_path', async () => {
@@ -208,8 +216,10 @@ test('no edits at all → no verdict, never a grade', async () => {
 // ── i18n + derived sessions ───────────────────────────────────────────────
 
 test('korean catalog renders korean evidence', async () => {
-  const r = await rule1For(session(editBlockedUnread('/p/a.ts')), { lang: 'ko' });
-  assert.match(r.evidence[0] ?? '', /읽지 않고 수정 시도 1회/);
+  const r = await rule1For(session(
+    editBlockedUnread('/p/a.ts'), editBlockedUnread('/p/a.ts'), editBlockedUnread('/p/a.ts'),
+  ), { lang: 'ko' });
+  assert.match(r.evidence[0] ?? '', /읽지 않고 수정 시도 3회/);
 });
 
 test('resume/compaction descendants get the prior-session annotation', async () => {
