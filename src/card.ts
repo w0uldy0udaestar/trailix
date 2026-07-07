@@ -3,7 +3,7 @@ import { msg } from './messages.ts';
 import { isScorable } from './parser.ts';
 import { evaluateAll, type EvaluateOptions } from './rules/index.ts';
 import { aggregate, type Assessment } from './aggregate.ts';
-import { factLines } from './facts.ts';
+import { factLines, formatDuration } from './facts.ts';
 
 /**
  * The single structured card model. Every surface (CLI, hook, skill) renders
@@ -72,10 +72,25 @@ export interface BuildCardOptions extends EvaluateOptions {
   durationLabel?: string;
 }
 
+/** MM-DD from an epoch-ms timestamp taken from a record (no wall clock). */
+function dateLabelFrom(ts: number): string {
+  const d = new Date(ts);
+  const mm = String(d.getMonth() + 1).padStart(2, '0');
+  const dd = String(d.getDate()).padStart(2, '0');
+  return `${mm}-${dd}`;
+}
+
 export function buildCard(stats: SessionStats, options: BuildCardOptions = {}): Card {
   const lang: Lang = options.lang ?? 'en';
   const scope = msg('scope.session', { n: stats.humanInputCount }, lang);
   const facts = factLines(stats, lang);
+
+  const dateLabel = options.dateLabel ?? (stats.firstTs !== undefined ? dateLabelFrom(stats.firstTs) : undefined);
+  const durationMin =
+    stats.firstTs !== undefined && stats.lastTs !== undefined && stats.lastTs > stats.firstTs
+      ? Math.round((stats.lastTs - stats.firstTs) / 60000)
+      : undefined;
+  const durationLabel = options.durationLabel ?? (durationMin !== undefined && durationMin > 0 ? formatDuration(durationMin, lang) : undefined);
 
   // Empty: nothing happened this session. Guarded on scorability so a session
   // that is unscorable (e.g. all-unknown records) but has 0 events falls
@@ -86,8 +101,8 @@ export function buildCard(stats: SessionStats, options: BuildCardOptions = {}): 
       overall: 'no_verdict',
       headline: msg('state.empty.title', {}, lang),
       scope,
-      dateLabel: options.dateLabel,
-      durationLabel: options.durationLabel,
+      dateLabel,
+      durationLabel,
       verdicts: [],
       notes: [],
       facts,
@@ -106,8 +121,8 @@ export function buildCard(stats: SessionStats, options: BuildCardOptions = {}): 
       overall: 'no_verdict',
       headline: msg('state.no_verdict', {}, lang),
       scope,
-      dateLabel: options.dateLabel,
-      durationLabel: options.durationLabel,
+      dateLabel,
+      durationLabel,
       verdicts: [],
       notes: buildNotes(assessment, lang),
       facts,
@@ -121,8 +136,8 @@ export function buildCard(stats: SessionStats, options: BuildCardOptions = {}): 
     overall: assessment.overall,
     headline: msg(HEADLINE_KEY[assessment.overall], {}, lang),
     scope,
-    dateLabel: options.dateLabel,
-    durationLabel: options.durationLabel,
+    dateLabel,
+    durationLabel,
     verdicts: verdictLines(assessment),
     notes: buildNotes(assessment, lang),
     facts,

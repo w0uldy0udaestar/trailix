@@ -119,18 +119,32 @@ export interface CliRenderOptions {
   ascii?: boolean;
 }
 
+/**
+ * Fold non-glyph unicode punctuation to ASCII for --ascii. Every replacement is
+ * width-preserving (1 col → 1 col) so a line clamped before folding still fits;
+ * box chars only appear when boxed, which --ascii disables.
+ */
+function asciiFold(s: string): string {
+  return s
+    .replace(/[╭╮╰╯│]/g, '')
+    .replace(/[─·—]/g, '-')
+    .replace(/…/g, '.');
+}
+
 /** CLI (TTY): ANSI colour + unicode box, NO_COLOR / --ascii aware. */
 export function renderCli(card: Card, options: CliRenderOptions = {}): string {
   const env = options.env ?? process.env;
   const isTTY = options.isTTY ?? false;
   const term = options.termWidth ?? 80;
   const width = Math.min(term, MAX_CARD_WIDTH);
-  return renderCard(card, {
+  const ascii = options.ascii === true || (env['TRAILIX_ASCII'] !== undefined && env['TRAILIX_ASCII'] !== '');
+  const out = renderCard(card, {
     width,
-    boxed: term >= BOX_MIN_TERM,
-    ascii: options.ascii === true || (env['TRAILIX_ASCII'] !== undefined && env['TRAILIX_ASCII'] !== ''),
+    boxed: term >= BOX_MIN_TERM && !ascii, // --ascii promises no box (help text)
+    ascii,
     color: resolveColor(env, isTTY),
   });
+  return ascii ? asciiFold(out) : out;
 }
 
 /**

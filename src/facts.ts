@@ -86,7 +86,7 @@ export function factLines(stats: SessionStats, lang: Lang): string[] {
     activity.push(msg(f.searchEstimated ? 'fact.searched.est' : 'fact.searched', { n: f.searches }, lang));
   }
   if (f.subagents > 0) activity.push(msg('fact.subagents', { n: f.subagents }, lang));
-  if (f.durationMin !== undefined && f.durationMin > 0) activity.push(formatDuration(f.durationMin, lang));
+  // duration lives in the card header (not repeated here — design mockup A/B)
   if (f.estTok > 0) activity.push(msg('fact.tokens', { n: compactCount(f.estTok) }, lang));
 
   if (activity.length > 0) lines.push(activity.join(' · '));

@@ -53,11 +53,13 @@ test('CLI applies ANSI colour when TTY and colour allowed', async () => {
   assert.equal(out.includes('\x1b['), true);
 });
 
-test('CLI --ascii replaces unicode glyphs and drops the box below 80 cols', async () => {
+test('CLI --ascii is pure ASCII (glyphs + no box + folded punctuation)', async () => {
   const card = buildCard(await parse(session(editBlockedUnread('/p/a.ts'), read('/p/a.ts'), edit('/p/a.ts'))), { lang: 'en' });
   const out = renderCli(card, { env: { NO_COLOR: '1' }, isTTY: false, termWidth: 60, ascii: true });
-  assert.equal(out.includes('╭'), false); // plain mode under 80 cols
+  assert.equal(out.includes('╭'), false);
   assert.equal(/\[OK\]|\[!\]|\[X\]/.test(out), true);
+  // eslint-disable-next-line no-control-regex
+  assert.equal(/[^\x00-\x7f]/.test(out), false); // no unicode survives --ascii
   for (const line of out.split('\n')) assert.equal(stringWidth(line) <= 60, true);
 });
 

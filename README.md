@@ -16,9 +16,23 @@
    read 12 · edited 3 · searches ≥7 (est.) · ~84k tok
 ```
 
+## Try it
+
+```bash
+npx trailix           # grade the most recent session in this project
+npx trailix --done    # grade the session that just ended (from a new terminal)
+npx trailix list      # list recent sessions
+npx trailix --ascii   # portable ASCII output
+```
+
+Or install the Claude Code plugin for an **automatic Stop-hook report card** after
+delegation turns, plus the `/trailix` skill. Requires Node 24+.
+
 ## Status
 
-**Pre-release — under active development.** Design approved, implementation in progress.
+**Pre-release — under active development.** Design approved; engine, CLI, Stop
+hook and skill implemented (103 tests). Threshold calibration (full-history
+backtest) and public fixtures are the remaining gates before v1.0.
 
 - Grade: 3 levels (`✓ pass` / `! caution` / `✗ poor`), worst-of over ≤5 structural rules
 - Every verdict ships with an evidence line — no vibes, no LLM judging

@@ -131,6 +131,8 @@ export async function parseSessionLines(lines: AsyncIterable<string> | Iterable<
     incompleteLastLine: false,
     unknownRatio: 0,
     eventsTruncated: false,
+    lastTurnToolCount: 0,
+    lastTurnUsedSubagents: false,
   };
 
   const eventById = new Map<string, ToolEvent>();
@@ -151,10 +153,14 @@ export async function parseSessionLines(lines: AsyncIterable<string> | Iterable<
 
     if (SUBAGENT_TOOLS.has(tool)) stats.usedSubagents = true;
 
+    // Track the just-ended turn (reset on each human input) for the Stop hook's
+    // delegation-turn gate. Self events are excluded (counted below).
     if (isSelfEvent(tool, filePath, command)) {
       stats.selfEventCount += 1;
       return;
     }
+    stats.lastTurnToolCount += 1;
+    if (SUBAGENT_TOOLS.has(tool)) stats.lastTurnUsedSubagents = true;
     if (stats.events.length >= MAX_EVENTS) {
       stats.eventsTruncated = true;
       return;
@@ -224,7 +230,11 @@ export async function parseSessionLines(lines: AsyncIterable<string> | Iterable<
           if ((block as { type?: string })?.type === 'tool_result') ingestToolResult(rec, block as Parameters<typeof ingestToolResult>[1]);
         }
       }
-      if (isHumanInput(rec)) stats.humanInputCount += 1;
+      if (isHumanInput(rec)) {
+        stats.humanInputCount += 1;
+        stats.lastTurnToolCount = 0;
+        stats.lastTurnUsedSubagents = false;
+      }
       return;
     }
   };

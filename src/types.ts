@@ -63,6 +63,10 @@ export interface SessionStats {
   firstTs?: number;
   /** Latest record timestamp (epoch ms), for session duration. */
   lastTs?: number;
+  /** Tool calls since the last human input (the just-ended turn). */
+  lastTurnToolCount: number;
+  /** A subagent was spawned in the just-ended turn. */
+  lastTurnUsedSubagents: boolean;
 }
 
 export type Verdict = 'pass' | 'caution' | 'poor' | 'no_verdict';
