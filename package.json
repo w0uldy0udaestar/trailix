@@ -4,12 +4,19 @@
   "description": "Grades the thoroughness of delegated Claude Code work — a rule-based report card with evidence lines, inside your terminal.",
   "license": "MIT",
   "type": "module",
+  "bin": {
+    "trailix": "bin/trailix.ts",
+    "range": "bin/trailix.ts"
+  },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/w0uldy0udaestar/trailix.git"
   },
   "files": [
-    "README.md"
+    "README.md",
+    "bin/",
+    "src/",
+    "plugin/"
   ],
   "engines": {
     "node": ">=24"
