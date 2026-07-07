@@ -5,24 +5,24 @@
   "license": "MIT",
   "type": "module",
   "bin": {
-    "trailix": "bin/trailix.ts"
+    "trailix": "dist/bin/trailix.js",
+    "trailix-hook": "dist/bin/trailix-hook.js"
   },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/w0uldy0udaestar/trailix.git"
   },
   "files": [
-    "README.md",
-    "bin/",
-    "src/",
-    "plugin/"
+    "dist/"
   ],
   "engines": {
     "node": ">=24"
   },
   "scripts": {
     "test": "node --test 'test/**/*.test.ts'",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "build": "rm -rf dist && tsc -p tsconfig.build.json",
+    "prepack": "npm run build"
   },
   "keywords": [
     "claude-code",
