@@ -12,20 +12,11 @@ cross-check its sources, or lean on one? Did it verify what its subagents
 produced — or just trust them? trailix answers that, as a report card, right in
 your terminal.
 
-```
-╭─ trailix · session · 3 turns ─ 07-08 · 22m ──────────────────────────────────╮
-│ ! caution  some gaps worth a look                                            │
-╰──────────────────────────────────────────────────────────────────────────────╯
- verdicts
-   ✓ every edited file was read first
-   ! only 1 unique source domain — cross-validation is thin
-   ! deep 1 · skim 3 (partial reads before edit)
-   ✓ 3 subagents — results cross-checked
- facts
-   sources 1
-   read 5 · edited 4 · subagents 3 · ~14k tok
-   ◌ repeat reads — no verdict
-```
+<p align="center">
+  <img src="./docs/demo-card.svg" alt="trailix example card: a 'caution' verdict — every edited file was read first (pass), only 1 unique source domain so cross-validation is thin (caution), deep 1 skim 3 (caution), 3 subagents results cross-checked (pass), plus a facts line." width="729">
+</p>
+
+<p align="center"><sub><code>npx trailix demo</code> prints this card — no session needed.</sub></p>
 
 Every verdict ships with an evidence line — no vibes, no LLM judging. The grade
 is the **worst of ≤5 structural rules**, and any rule that can't be judged is
