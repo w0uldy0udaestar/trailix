@@ -1,11 +1,14 @@
 # Launch copy (drafts) — review before posting
 
-These are drafts for the public launch. Nothing is posted automatically; the
-launch is your call on timing. Publish to npm and flip the repo public first.
+Ready to post — trailix is live: **npm** https://www.npmjs.com/package/trailix ·
+**repo** https://github.com/w0uldy0udaestar/trailix. Nothing is posted
+automatically; the launch is your call on timing.
 
 ---
 
 ## Show HN
+
+**URL field:** `https://github.com/w0uldy0udaestar/trailix`
 
 **Title options** (HN rewards plain and specific over clever):
 
@@ -66,7 +69,8 @@ hours. Have the repo public + npm live + demo GIF in the README before posting.
 > read-only (never touches your session data), fail-silent, and local. Install
 > the plugin for the automatic card, or just `npx trailix demo` to see one.
 >
-> It's early and I'd love feedback on the rules. Repo + how it works: [link]
+> It's early and I'd love feedback on the rules.
+> Repo: https://github.com/w0uldy0udaestar/trailix · `npx trailix demo`
 
 Notes: r/ClaudeAI likes "read-only / local / open source" up front. Lead with
 the card, not the pitch.
