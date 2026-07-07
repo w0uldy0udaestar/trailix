@@ -45,8 +45,12 @@ const CATALOG = {
 
   // rule ② source cross-check
   'rule2.thin': {
-    en: '{n} unique source domain(s) — cross-validation is thin',
+    en: '{n} unique source domains — cross-validation is thin',
     ko: '고유 소스 도메인 {n}개 — 교차검증 얇음',
+  },
+  'rule2.thin.one': {
+    en: 'only 1 unique source domain — cross-validation is thin',
+    ko: '고유 소스 도메인 1개 — 교차검증 얇음',
   },
   'rule2.pass': {
     en: '{n} unique source domains consulted',
@@ -91,6 +95,7 @@ const CATALOG = {
   'headline.poor': { en: 'shortcuts taken', ko: '건너뛴 흔적이 있어요' },
   'headline.no_verdict': { en: 'not enough to grade yet', ko: '아직 채점할 게 부족해요' },
   'scope.session': { en: 'session · {n} turns', ko: '세션 누적 · {n}턴' },
+  'scope.session.one': { en: 'session · 1 turn', ko: '세션 누적 · 1턴' },
   'state.no_verdict': {
     en: 'no verdict — nothing yet meets a scoring rule',
     ko: '판정 불가 — 아직 채점 기준을 충족한 활동이 없어요',
@@ -111,13 +116,13 @@ const CATALOG = {
   'section.facts': { en: 'facts', ko: '사실' },
   'section.next': { en: 'next', ko: '다음' },
 
-  // ── fact segments ────────────────────────────────────────────────────────
-  'fact.sources': { en: '{n} sources', ko: '소스 {n}' },
+  // ── fact segments (label-first so no English pluralization is needed) ─────
+  'fact.sources': { en: 'sources {n}', ko: '소스 {n}' },
   'fact.read': { en: 'read {n}', ko: '읽음 {n}' },
   'fact.edited': { en: 'edited {n}', ko: '수정 {n}' },
   'fact.searched': { en: 'searched {n}', ko: '검색 {n}' },
   'fact.searched.est': { en: 'searched ≥{n} (est.)', ko: '검색 ≥{n}(추정)' },
-  'fact.subagents': { en: '{n} subagents', ko: '서브에이전트 {n}' },
+  'fact.subagents': { en: 'subagents {n}', ko: '서브에이전트 {n}' },
   'fact.tokens': { en: '~{n} tok', ko: '약 {n} tok' },
   'fact.duration': { en: '{n}m', ko: '{n}분' },
   'fact.duration.hour': { en: '~{n}h', ko: '약 {n}시간' },

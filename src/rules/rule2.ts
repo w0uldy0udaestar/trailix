@@ -57,7 +57,8 @@ export function evaluateRule2(stats: SessionStats, options: { lang?: Lang } = {}
   }
   const n = b.domains.length;
   if (n < RULE2_MIN_DOMAINS) {
-    return { ruleId: 'rule2', verdict: 'caution', evidence: [msg('rule2.thin', { n }, lang)], annotations: [] };
+    const key = n === 1 ? 'rule2.thin.one' : 'rule2.thin';
+    return { ruleId: 'rule2', verdict: 'caution', evidence: [msg(key, { n }, lang)], annotations: [] };
   }
   return { ruleId: 'rule2', verdict: 'pass', evidence: [msg('rule2.pass', { n }, lang)], annotations: [] };
 }

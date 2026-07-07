@@ -82,7 +82,9 @@ function dateLabelFrom(ts: number): string {
 
 export function buildCard(stats: SessionStats, options: BuildCardOptions = {}): Card {
   const lang: Lang = options.lang ?? 'en';
-  const scope = msg('scope.session', { n: stats.humanInputCount }, lang);
+  const scope = stats.humanInputCount === 1
+    ? msg('scope.session.one', {}, lang)
+    : msg('scope.session', { n: stats.humanInputCount }, lang);
   const facts = factLines(stats, lang);
 
   const dateLabel = options.dateLabel ?? (stats.firstTs !== undefined ? dateLabelFrom(stats.firstTs) : undefined);
