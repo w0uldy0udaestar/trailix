@@ -77,6 +77,21 @@ the card, not the pitch.
 
 ---
 
+## Plugin marketplace submission (Claude Code)
+
+The community directory is submit-by-form, not PR:
+**https://clau.de/plugin-directory-submission** (sign in with your Claude
+account). Everything is ready:
+
+- **Repo URL:** `https://github.com/w0uldy0udaestar/trailix`
+- Plugin validated: `.claude-plugin/plugin.json`, `hooks/hooks.json`,
+  `.claude/skills/trailix/SKILL.md` all present at the repo root and confirmed
+  working (the Stop-hook card was tested with `CLAUDE_PLUGIN_ROOT` set).
+- **Category:** developer-tools · **Name:** trailix
+
+This lists the automatic Stop-hook card + `/trailix` skill directly to Claude
+Code users — the exact audience.
+
 ## One-liner (X / GitHub description / npm)
 
 > Grades the thoroughness of delegated Claude Code work — a rule-based report
