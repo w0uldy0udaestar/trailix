@@ -94,9 +94,10 @@ the result is the same every run. An LLM judge would be a vibe with extra steps.
 
 ## Status
 
-**Pre-release.** Engine, CLI, Stop hook and skill are implemented and tested
-(100+ tests), and thresholds are calibrated against a full-history backtest.
-Public example fixtures and a demo GIF are the remaining items before v1.0.
+**v0.1.0 — first release, live on npm.** Engine, CLI, Stop hook and skill are
+implemented and tested (110+ tests, CI green), with thresholds calibrated
+against a full-history backtest. Early days — feedback on the rules is very
+welcome (see the rule-suggestion issue template).
 
 ## License
 
