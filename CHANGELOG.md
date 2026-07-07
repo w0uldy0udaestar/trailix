@@ -3,9 +3,13 @@
 All notable changes to trailix. Threshold changes from backtest calibration are
 recorded here (design requirement: "조정 이력은 CHANGELOG에 남긴다").
 
-## [Unreleased]
+## [0.1.0] — 2026-07-08
 
-### Calibrated — 2026-07-08 (full-history backtest gate, T4)
+First public release. Grades delegated Claude Code work — CLI, automatic
+Stop-hook card, and `/trailix` skill — from a rule-based engine with evidence
+lines, thresholds calibrated against real session history.
+
+### Calibrated (full-history backtest gate, T4)
 
 Ran the engine over the full local session corpus (88 sessions) to measure
 per-rule fire rates and spot-check false positives before release.
