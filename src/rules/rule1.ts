@@ -21,9 +21,16 @@ import { fileList, msg } from '../messages.ts';
  * ≥3 clean unread files in a session with no untracked-read possibility.
  * Edits whose outcome was never recorded (live/aborted session) are never
  * counted as unread — the result may well have been a harness rejection.
+ *
+ * ①-a threshold: caution only at ≥3 blocked attempts. Full-history backtest
+ * (T4, 2026-07-08) showed 1-2 blocked-then-corrected edits in ~48% of edit
+ * sessions — normal self-correction, not a thoroughness problem. Flagging them
+ * made caution the norm ("cry wolf"). ≥3 signals real blind-edit thrashing
+ * (~9% of sessions). Matches the design's own "시도 3회" evidence example.
  */
 
 export const RULE1_POOR_THRESHOLD = 3;
+export const RULE1A_CAUTION_MIN = 3;
 
 const EDIT_TOOLS = new Set(['Edit', 'MultiEdit', 'NotebookEdit']);
 
@@ -280,8 +287,9 @@ export function evaluateRule1(stats: SessionStats, options: Rule1Options = {}): 
   if (b.unresolvedEdits > 0) annotations.push(msg('annotation.editUnresolved', { n: b.unresolvedEdits }, lang));
   if (options.derivedSession === true) annotations.push(msg('annotation.priorSessionUnknown', {}, lang));
 
+  const attemptsFire = b.blockedAttempts >= RULE1A_CAUTION_MIN;
   const evidence: string[] = [];
-  if (b.blockedAttempts > 0) {
+  if (attemptsFire) {
     evidence.push(msg('rule1.attempts', { n: b.blockedAttempts }, lang));
   }
   if (b.unreadFiles.length > 0) {
@@ -292,9 +300,10 @@ export function evaluateRule1(stats: SessionStats, options: Rule1Options = {}): 
   let verdict: RuleResult['verdict'];
   if (b.unreadFiles.length >= RULE1_POOR_THRESHOLD && annotations.length === 0) {
     verdict = 'poor';
-  } else if (b.unreadFiles.length > 0 || b.blockedAttempts > 0) {
+  } else if (b.unreadFiles.length > 0 || attemptsFire) {
     verdict = 'caution';
   } else {
+    // 0-2 blocked attempts with everything read = normal self-correction → pass
     verdict = 'pass';
     evidence.push(msg('rule1.pass', {}, lang));
   }
