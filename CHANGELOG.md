@@ -3,6 +3,24 @@
 All notable changes to trailix. Threshold changes from backtest calibration are
 recorded here (design requirement: "조정 이력은 CHANGELOG에 남긴다").
 
+## [0.2.0] — 2026-07-08
+
+### Added
+- **Verdict-line visualization.** Each scored rule's first evidence line now
+  carries a unicode metric: a gauge (rule ③ deep-read share, rule ⑤ efficiency)
+  or a count bar (rule ② source domains, rule ④ subagents). Polarity is unified
+  so a fuller/longer bar always means "better" — rule ⑤ stores efficiency
+  (1 − waste), not waste. Only `█`/`░` are used (both East-Asian neutral width,
+  so the Korean card stays aligned; `●` is ambiguous-width and was avoided).
+  Bars render across all three surfaces — CLI colour, colourless Stop-hook, and
+  the `/trailix` skill markdown as inline-code — with an `--ascii` fallback and
+  CJK-aware column alignment. Rule ① opts out: its evidence is file-path data,
+  kept at full width.
+
+### Changed
+- Tightened metric-row spacing and trimmed rule ②/⑤ evidence so verdict lines
+  never clamp on an 80-column Stop-hook surface (verified with all rules firing).
+
 ## [0.1.0] — 2026-07-08
 
 First public release. Grades delegated Claude Code work — CLI, automatic
