@@ -1,4 +1,4 @@
-import type { Lang, RuleResult, SessionStats, Verdict } from './types.ts';
+import type { Lang, Metric, RuleResult, SessionStats, Verdict } from './types.ts';
 import { msg } from './messages.ts';
 import { isScorable } from './parser.ts';
 import { evaluateAll, type EvaluateOptions } from './rules/index.ts';
@@ -16,6 +16,10 @@ export type CardState = 'normal' | 'no_verdict' | 'empty';
 export interface VerdictLine {
   verdict: Verdict;
   text: string;
+  /** Visual metric — set only on a rule's first evidence line. */
+  metric?: Metric;
+  /** Short viz label for the metric column (undefined when no metric). */
+  label?: string;
 }
 
 export interface Card {
@@ -58,10 +62,20 @@ function buildNotes(assessment: Assessment, lang: Lang): string[] {
   return notes;
 }
 
-function verdictLines(assessment: Assessment): VerdictLine[] {
+function verdictLines(assessment: Assessment, lang: Lang): VerdictLine[] {
   const lines: VerdictLine[] = [];
   for (const r of assessment.scored) {
-    for (const text of r.evidence) lines.push({ verdict: r.verdict, text });
+    r.evidence.forEach((text, i) => {
+      // The metric (and its label) binds to the first evidence line only; later
+      // lines (rule1's file list) render as plain text.
+      const withMetric = i === 0 && r.metric !== undefined;
+      lines.push({
+        verdict: r.verdict,
+        text,
+        metric: withMetric ? r.metric : undefined,
+        label: withMetric ? msg(`viz.${r.ruleId}` as 'viz.rule2', {}, lang) : undefined,
+      });
+    });
   }
   return lines;
 }
@@ -140,7 +154,7 @@ export function buildCard(stats: SessionStats, options: BuildCardOptions = {}): 
     scope,
     dateLabel,
     durationLabel,
-    verdicts: verdictLines(assessment),
+    verdicts: verdictLines(assessment, lang),
     notes: buildNotes(assessment, lang),
     facts,
     lang,

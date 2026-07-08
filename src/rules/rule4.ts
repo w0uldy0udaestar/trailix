@@ -1,4 +1,4 @@
-import type { Lang, RuleResult, SessionStats } from '../types.ts';
+import type { Lang, Metric, RuleResult, SessionStats } from '../types.ts';
 import { msg } from '../messages.ts';
 import { CROSS_CHECK_TOOLS, DELEGATION_TOOLS } from './shared.ts';
 
@@ -44,8 +44,10 @@ export function evaluateRule4(stats: SessionStats, options: { lang?: Lang } = {}
   if (b.subagents < RULE4_MIN_SUBAGENTS) {
     return { ruleId: 'rule4', verdict: 'no_verdict', evidence: [], annotations: [] };
   }
+  // count = subagents spawned; the row colour carries the cross-check verdict.
+  const metric: Metric = { kind: 'count', n: b.subagents };
   if (!b.crossChecked) {
-    return { ruleId: 'rule4', verdict: 'caution', evidence: [msg('rule4.unchecked', { n: b.subagents }, lang)], annotations: [] };
+    return { ruleId: 'rule4', verdict: 'caution', evidence: [msg('rule4.unchecked', { n: b.subagents }, lang)], annotations: [], metric };
   }
-  return { ruleId: 'rule4', verdict: 'pass', evidence: [msg('rule4.pass', { n: b.subagents }, lang)], annotations: [] };
+  return { ruleId: 'rule4', verdict: 'pass', evidence: [msg('rule4.pass', { n: b.subagents }, lang)], annotations: [], metric };
 }

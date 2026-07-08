@@ -21,7 +21,7 @@ test('rule2: one domain across many fetches → caution (thin)', async () => {
     webFetch('https://arxiv.org/abs/1'), webFetch('https://arxiv.org/abs/2'),
   )));
   assert.equal(r.verdict, 'caution');
-  assert.match(r.evidence[0] ?? '', /1 unique source domain/);
+  assert.match(r.evidence[0] ?? '', /1 source domain/);
 });
 
 test('rule2: search-only (no fetches) → no verdict (domains unavailable, not "0 sources")', async () => {
