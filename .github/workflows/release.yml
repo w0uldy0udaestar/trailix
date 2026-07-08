@@ -13,6 +13,11 @@ jobs:
     permissions:
       contents: write # create the GitHub Release
       id-token: write # npm provenance
+    env:
+      # job-level so the publish step's own `if` can read it. A step-level env
+      # is NOT available to that step's `if`, which made the whole workflow fail
+      # to validate (0s startup failure) on v0.1.0 and v0.2.0.
+      NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -29,7 +34,6 @@ jobs:
         if: ${{ env.NPM_TOKEN != '' }}
         run: npm publish --provenance --access public
         env:
-          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
       - name: GitHub Release
         run: gh release create "$GITHUB_REF_NAME" --title "$GITHUB_REF_NAME" --notes "See [CHANGELOG.md](./CHANGELOG.md). Install: \`npx trailix\` (Node 24+)."
