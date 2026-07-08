@@ -1,6 +1,6 @@
 {
   "name": "trailix",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Grades the thoroughness of delegated Claude Code work — a rule-based report card with evidence lines, inside your terminal.",
   "license": "MIT",
   "type": "module",
