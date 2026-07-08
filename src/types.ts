@@ -71,6 +71,21 @@ export interface SessionStats {
 
 export type Verdict = 'pass' | 'caution' | 'poor' | 'no_verdict';
 
+/**
+ * A visual metric for a rule's first verdict line. Two kinds only, both
+ * "higher is better" so a longer/fuller bar ALWAYS reads as good — polarity is
+ * unified across rules (rule5 stores efficiency = 1 − waste, never waste).
+ *   gauge — a 0..1 fill ratio (rule3 deep-share, rule5 efficiency). `display`
+ *           is the language-neutral figure shown after the bar ("5:0", "30%").
+ *   count — a bar of n filled cells (rule2 sources, rule4 subagents). The bar
+ *           itself is the number, so there is no separate value.
+ * rule1 opts out entirely: its evidence is file-path data, not prose, so it
+ * stays as text at full width (never clamped behind a bar).
+ */
+export type Metric =
+  | { kind: 'gauge'; value: number; display: string }
+  | { kind: 'count'; n: number };
+
 export interface RuleResult {
   ruleId: string;
   verdict: Verdict;
@@ -81,6 +96,8 @@ export interface RuleResult {
    * caps the verdict at "caution" (honest floor: never "poor" on a guess).
    */
   annotations: string[];
+  /** Optional visual metric, bound to the first evidence line by the card. */
+  metric?: Metric;
 }
 
 export type Lang = 'en' | 'ko';

@@ -1,4 +1,4 @@
-import type { Lang, RuleResult, SessionStats } from '../types.ts';
+import type { Lang, Metric, RuleResult, SessionStats } from '../types.ts';
 import { msg } from '../messages.ts';
 import { estTokens, compactCount, succeeded } from './shared.ts';
 
@@ -51,10 +51,12 @@ export function evaluateRule5(stats: SessionStats, options: { lang?: Lang } = {}
     return { ruleId: 'rule5', verdict: 'no_verdict', evidence: [], annotations: [] };
   }
   const ratio = b.rereadChars / b.totalResultChars;
+  const pct = Math.round(ratio * 100);
+  // gauge = efficiency (1 − waste), so a fuller bar is better; display the waste %.
+  const metric: Metric = { kind: 'gauge', value: 1 - ratio, display: `${pct}%` };
   if (b.maxReadsOfAFile >= RULE5_MIN_REREADS && ratio >= RULE5_WASTE_RATIO) {
-    const pct = Math.round(ratio * 100);
     const tok = compactCount(estTokens(b.rereadChars));
-    return { ruleId: 'rule5', verdict: 'caution', evidence: [msg('rule5.waste', { pct, tok }, lang)], annotations: [] };
+    return { ruleId: 'rule5', verdict: 'caution', evidence: [msg('rule5.waste', { pct, tok }, lang)], annotations: [], metric };
   }
-  return { ruleId: 'rule5', verdict: 'pass', evidence: [msg('rule5.pass', {}, lang)], annotations: [] };
+  return { ruleId: 'rule5', verdict: 'pass', evidence: [msg('rule5.pass', {}, lang)], annotations: [], metric };
 }

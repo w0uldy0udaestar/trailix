@@ -2,7 +2,7 @@ import type { Card, VerdictLine } from '../card.ts';
 import type { Verdict } from '../types.ts';
 import { msg } from '../messages.ts';
 import { boxHeader } from './box.ts';
-import { clampWidth, stringWidth, wrapText } from './width.ts';
+import { clampWidth, padEndWidth, stringWidth, wrapText } from './width.ts';
 import {
   colorForVerdict,
   colorizeInline,
@@ -12,6 +12,7 @@ import {
   resolveColor,
   type PaletteOptions,
 } from './palette.ts';
+import { GAUGE_WIDTH, renderMetric } from './metric.ts';
 
 /** Card width ceiling (design rule 3A) and the hook ⎿-gutter reserve. */
 export const MAX_CARD_WIDTH = 80;
@@ -50,11 +51,45 @@ function sectionLabel(key: 'section.verdicts' | 'section.facts' | 'section.next'
   return ' ' + paint(msg(key, {}, lang as 'en'), 'gray', opts);
 }
 
-function verdictRow(v: VerdictLine, width: number, opts: PaletteOptions): string {
+interface MetricCols {
+  labelWidth: number;
+  valueWidth: number;
+}
+
+/** Widest label and gauge value across metric rows, for column alignment. */
+function metricColumns(verdicts: VerdictLine[]): MetricCols {
+  let labelWidth = 0;
+  let valueWidth = 0;
+  for (const v of verdicts) {
+    if (v.metric === undefined || v.label === undefined) continue;
+    labelWidth = Math.max(labelWidth, stringWidth(v.label));
+    if (v.metric.kind === 'gauge') valueWidth = Math.max(valueWidth, stringWidth(v.metric.display));
+  }
+  return { labelWidth, valueWidth };
+}
+
+function verdictRow(v: VerdictLine, width: number, opts: PaletteOptions, cols: MetricCols): string {
   const gPlain = glyphFor(v.verdict, opts);
-  const budget = Math.min(EVIDENCE_MAX, width - 3 - stringWidth(gPlain) - 1);
   const g = paint(gPlain, colorForVerdict(v.verdict), opts);
-  return `   ${g} ${colorizeInline(clampWidth(v.text, budget), opts)}`;
+
+  // Plain row: rule1 (opts out of viz) and any secondary evidence line — the
+  // evidence keeps the full width budget, never clamped behind a bar.
+  if (v.metric === undefined || v.label === undefined) {
+    const budget = Math.min(EVIDENCE_MAX, width - 3 - stringWidth(gPlain) - 1);
+    return `   ${g} ${colorizeInline(clampWidth(v.text, budget), opts)}`;
+  }
+
+  // Metric row: glyph  label(pad)  bar(pad)  value(pad)   evidence(clamp).
+  // stringWidth ignores ANSI, so painted glyph/bar pad to their visible width.
+  const label = padEndWidth(v.label, cols.labelWidth);
+  const { bar, value } = renderMetric(v.metric, v.verdict, opts);
+  const barCell = padEndWidth(bar, GAUGE_WIDTH);
+  const prefix =
+    cols.valueWidth > 0
+      ? `   ${g} ${label}  ${barCell}  ${padEndWidth(value, cols.valueWidth)}  `
+      : `   ${g} ${label}  ${barCell}  `;
+  const budget = Math.max(8, width - stringWidth(prefix));
+  return prefix + colorizeInline(clampWidth(v.text, budget), opts);
 }
 
 function factRow(text: string, width: number, opts: PaletteOptions): string {
@@ -88,7 +123,8 @@ function renderCard(card: Card, o: RenderOpts): string {
   // ── verdicts ──
   if (card.verdicts.length > 0) {
     out.push(sectionLabel('section.verdicts', lang, opts));
-    for (const v of card.verdicts) out.push(verdictRow(v, o.width, opts));
+    const cols = metricColumns(card.verdicts);
+    for (const v of card.verdicts) out.push(verdictRow(v, o.width, opts, cols));
   }
 
   // ── facts ──
@@ -174,7 +210,15 @@ export function renderSkill(card: Card): string {
 
   if (card.verdicts.length > 0) {
     out.push(`**${msg('section.verdicts', {}, lang)}**`);
-    for (const v of card.verdicts) out.push(`- ${glyphFor(v.verdict, {})} ${v.text}`);
+    for (const v of card.verdicts) {
+      if (v.metric !== undefined && v.label !== undefined) {
+        const { bar, value } = renderMetric(v.metric, v.verdict, {});
+        const val = value !== '' ? ` ${value}` : '';
+        out.push(`- ${glyphFor(v.verdict, {})} ${v.label} ${bar}${val} — ${v.text}`);
+      } else {
+        out.push(`- ${glyphFor(v.verdict, {})} ${v.text}`);
+      }
+    }
     out.push('');
   }
   if (card.facts.length > 0) {

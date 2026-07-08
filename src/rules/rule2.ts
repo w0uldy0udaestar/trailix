@@ -1,4 +1,4 @@
-import type { Lang, RuleResult, SessionStats } from '../types.ts';
+import type { Lang, Metric, RuleResult, SessionStats } from '../types.ts';
 import { msg } from '../messages.ts';
 import { domainOf } from './shared.ts';
 
@@ -56,9 +56,10 @@ export function evaluateRule2(stats: SessionStats, options: { lang?: Lang } = {}
     return { ruleId: 'rule2', verdict: 'no_verdict', evidence: [], annotations: [] };
   }
   const n = b.domains.length;
+  const metric: Metric = { kind: 'count', n };
   if (n < RULE2_MIN_DOMAINS) {
     const key = n === 1 ? 'rule2.thin.one' : 'rule2.thin';
-    return { ruleId: 'rule2', verdict: 'caution', evidence: [msg(key, { n }, lang)], annotations: [] };
+    return { ruleId: 'rule2', verdict: 'caution', evidence: [msg(key, { n }, lang)], annotations: [], metric };
   }
-  return { ruleId: 'rule2', verdict: 'pass', evidence: [msg('rule2.pass', { n }, lang)], annotations: [] };
+  return { ruleId: 'rule2', verdict: 'pass', evidence: [msg('rule2.pass', { n }, lang)], annotations: [], metric };
 }

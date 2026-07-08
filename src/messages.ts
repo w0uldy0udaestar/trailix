@@ -45,11 +45,11 @@ const CATALOG = {
 
   // rule ② source cross-check
   'rule2.thin': {
-    en: '{n} unique source domains — cross-validation is thin',
+    en: '{n} source domains — cross-validation is thin',
     ko: '고유 소스 도메인 {n}개 — 교차검증 얇음',
   },
   'rule2.thin.one': {
-    en: 'only 1 unique source domain — cross-validation is thin',
+    en: '1 source domain — cross-validation is thin',
     ko: '고유 소스 도메인 1개 — 교차검증 얇음',
   },
   'rule2.pass': {
@@ -134,6 +134,11 @@ const CATALOG = {
   'rulename.rule3': { en: 'read depth', ko: '정독 vs 훑기' },
   'rulename.rule4': { en: 'delegation review', ko: '위임 후 대조' },
   'rulename.rule5': { en: 'repeat reads', ko: '토큰 반복 낭비' },
+  // ── short viz labels (metric column; rule1 opts out of visualization) ──────
+  'viz.rule2': { en: 'sources', ko: '교차검증' },
+  'viz.rule3': { en: 'reads', ko: '정독' },
+  'viz.rule4': { en: 'delegation', ko: '위임' },
+  'viz.rule5': { en: 'rereads', ko: '반복' },
   'note.not_applicable': { en: '{rules} — no verdict', ko: '{rules} — 판정 불가' },
   'grade.pass': { en: 'pass', ko: '통과' },
   'grade.caution': { en: 'caution', ko: '주의' },

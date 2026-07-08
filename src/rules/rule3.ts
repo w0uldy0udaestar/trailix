@@ -1,4 +1,4 @@
-import type { Lang, RuleResult, SessionStats, ToolEvent } from '../types.ts';
+import type { Lang, Metric, RuleResult, SessionStats, ToolEvent } from '../types.ts';
 import { msg } from '../messages.ts';
 import { succeeded } from './shared.ts';
 
@@ -77,8 +77,10 @@ export function evaluateRule3(stats: SessionStats, options: { lang?: Lang } = {}
     return { ruleId: 'rule3', verdict: 'no_verdict', evidence: [], annotations: [] };
   }
   const ratio = b.skim / sample;
+  // gauge = deep share (higher = better); display keeps the raw deep:skim split.
+  const metric: Metric = { kind: 'gauge', value: b.deep / sample, display: `${b.deep}:${b.skim}` };
   if (sample >= RULE3_MIN_SAMPLE && ratio > RULE3_SKIM_RATIO) {
-    return { ruleId: 'rule3', verdict: 'caution', evidence: [msg('rule3.skim', { deep: b.deep, skim: b.skim }, lang)], annotations: [] };
+    return { ruleId: 'rule3', verdict: 'caution', evidence: [msg('rule3.skim', { deep: b.deep, skim: b.skim }, lang)], annotations: [], metric };
   }
-  return { ruleId: 'rule3', verdict: 'pass', evidence: [msg('rule3.pass', { deep: b.deep, skim: b.skim }, lang)], annotations: [] };
+  return { ruleId: 'rule3', verdict: 'pass', evidence: [msg('rule3.pass', { deep: b.deep, skim: b.skim }, lang)], annotations: [], metric };
 }
