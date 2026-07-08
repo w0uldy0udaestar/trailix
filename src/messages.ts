@@ -76,8 +76,8 @@ const CATALOG = {
   },
   // rule ⑤ repeat-read waste
   'rule5.waste': {
-    en: 'repeat reads are {pct}% of tool output — ~{tok} tok (est.)',
-    ko: '반복 읽기가 도구 출력의 {pct}% — 약 {tok} tok 상당(추정)',
+    en: 'repeat reads waste ~{tok} tok of output (est.)',
+    ko: '반복 읽기로 약 {tok} tok 낭비(추정)',
   },
   'rule5.pass': {
     en: 'no wasteful repeat reads',
