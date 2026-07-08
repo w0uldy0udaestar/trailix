@@ -23,3 +23,6 @@ docs/how-it-works.html
 *.log
 .DS_Store
 .gstack/
+
+# demo: generated cast (regenerate with demo/make-cast.cjs; the .gif is committed)
+demo/trailix.cast
