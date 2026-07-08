@@ -129,7 +129,7 @@ test('rule5: same file re-read 3x dominating output → caution', async () => {
     read('/p/b.ts', 'y'.repeat(100)),
   )));
   assert.equal(r.verdict, 'caution');
-  assert.match(r.evidence[0] ?? '', /repeat reads are \d+% of tool output/);
+  assert.match(r.evidence[0] ?? '', /repeat reads waste ~\S+ tok/);
 });
 
 test('rule5: file re-read only twice (under the 3x threshold) → pass', async () => {

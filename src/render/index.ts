@@ -84,10 +84,13 @@ function verdictRow(v: VerdictLine, width: number, opts: PaletteOptions, cols: M
   const label = padEndWidth(v.label, cols.labelWidth);
   const { bar, value } = renderMetric(v.metric, v.verdict, opts);
   const barCell = padEndWidth(bar, GAUGE_WIDTH);
+  // Tight gaps around label/bar (1 col), 2 cols before the evidence so it still
+  // reads as a separate column. Keeps the evidence budget wide even when the
+  // longest label (rule4 "delegation") is present on an 80-col hook surface.
   const prefix =
     cols.valueWidth > 0
-      ? `   ${g} ${label}  ${barCell}  ${padEndWidth(value, cols.valueWidth)}  `
-      : `   ${g} ${label}  ${barCell}  `;
+      ? `   ${g} ${label} ${barCell} ${padEndWidth(value, cols.valueWidth)}  `
+      : `   ${g} ${label} ${barCell}  `;
   const budget = Math.max(8, width - stringWidth(prefix));
   return prefix + colorizeInline(clampWidth(v.text, budget), opts);
 }
@@ -213,8 +216,10 @@ export function renderSkill(card: Card): string {
     for (const v of card.verdicts) {
       if (v.metric !== undefined && v.label !== undefined) {
         const { bar, value } = renderMetric(v.metric, v.verdict, {});
-        const val = value !== '' ? ` ${value}` : '';
-        out.push(`- ${glyphFor(v.verdict, {})} ${v.label} ${bar}${val} — ${v.text}`);
+        const inner = value !== '' ? `${bar} ${value}` : bar;
+        // Bar in an inline-code span → monospace in chat, and a clean visual
+        // divider from the evidence (no doubled em dash).
+        out.push(`- ${glyphFor(v.verdict, {})} ${v.label} \`${inner}\` ${v.text}`);
       } else {
         out.push(`- ${glyphFor(v.verdict, {})} ${v.text}`);
       }
