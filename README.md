@@ -13,10 +13,10 @@ produced — or just trust them? trailix answers that, as a report card, right i
 your terminal.
 
 <p align="center">
-  <img src="./docs/demo-card.svg" alt="trailix example card: a 'caution' verdict — every edited file was read first (pass), only 1 unique source domain so cross-validation is thin (caution), deep 1 skim 3 (caution), 3 subagents results cross-checked (pass), plus a facts line." width="729">
+  <img src="./demo/trailix.gif" alt="trailix demo: typing `npx trailix demo` prints a boxed report card — a 'caution' verdict with evidence lines (every edited file was read first; only 1 source domain so cross-validation is thin; deep 1, skim 3; 3 subagents cross-checked) and a facts line — then the same card in Korean via `--lang ko`." width="820">
 </p>
 
-<p align="center"><sub><code>npx trailix demo</code> prints this card — no session needed.</sub></p>
+<p align="center"><sub><code>npx trailix demo</code> prints this card — no session needed. Renders in English and 한국어.</sub></p>
 
 Every verdict ships with an evidence line — no vibes, no LLM judging. The grade
 is the **worst of ≤5 structural rules**, and any rule that can't be judged is
