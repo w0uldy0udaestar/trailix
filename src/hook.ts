@@ -1,7 +1,7 @@
 import { parseSessionFile } from './parser.ts';
 import { buildCard } from './card.ts';
-import { renderHook } from './render/index.ts';
-import { detectLang } from './messages.ts';
+import { renderHook, HOOK_MAX_CHARS } from './render/index.ts';
+import { detectLang, msg } from './messages.ts';
 
 /**
  * Stop-hook body. Reads the hook's stdin JSON, and — only when the just-ended
@@ -47,9 +47,12 @@ export async function runHook(stdinText: string, env: NodeJS.ProcessEnv = proces
   const isDelegation = stats.lastTurnUsedSubagents || stats.lastTurnToolCount >= DELEGATION_MIN_TOOLS;
   if (!isDelegation) return '';
 
-  const card = buildCard(stats, { lang: detectLang(env) });
+  const lang = detectLang(env);
+  const card = buildCard(stats, { lang });
   if (card.state === 'empty') return ''; // never reachable on a delegation turn, but defensive
 
-  const body = renderHook(card, { termWidth: 80 });
+  // The card points at its session map (display-only hint, re-capped at 10k).
+  let body = renderHook(card, { termWidth: 80 }) + `\n   ${msg('map.hint', {}, lang)}`;
+  if (body.length > HOOK_MAX_CHARS) body = body.slice(0, HOOK_MAX_CHARS - 1) + '…';
   return JSON.stringify({ systemMessage: body });
 }

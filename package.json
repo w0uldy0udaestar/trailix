@@ -1,7 +1,7 @@
 {
   "name": "trailix",
-  "version": "0.2.0",
-  "description": "Grades the thoroughness of delegated Claude Code work — a rule-based report card with evidence lines, inside your terminal.",
+  "version": "0.3.0",
+  "description": "See the full scope of delegated Claude Code work at a glance — a visual session map (research, decisions, changes on a timeline) plus a rule-based thoroughness report card.",
   "license": "MIT",
   "type": "module",
   "bin": {

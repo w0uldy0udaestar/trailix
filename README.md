@@ -4,13 +4,14 @@
 [![npm](https://img.shields.io/npm/v/trailix)](https://www.npmjs.com/package/trailix)
 [![license: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](./LICENSE)
 
-**How thorough was your AI agent, really?**
+**What did your AI agent actually do — and how thorough was it, really?**
 
 You delegate a task to Claude Code, it works for twenty minutes, and hands back
-a result. But *how* did it get there? Did it read the files it edited? Did it
-cross-check its sources, or lean on one? Did it verify what its subagents
-produced — or just trust them? trailix answers that, as a report card, right in
-your terminal.
+three bullet points. But what happened in those twenty minutes? How much did it
+read, what did it decide at each crossroads, which files did it change and by
+how much? trailix shows you the whole scope of the work at a glance — a visual
+**session map** in your browser, and a thoroughness **report card** in your
+terminal.
 
 <p align="center">
   <img src="./demo/trailix.gif" alt="trailix demo: typing `npx trailix demo` prints a boxed report card — a 'caution' verdict with evidence lines (every edited file was read first; only 1 source domain so cross-validation is thin; deep 1, skim 3; 3 subagents cross-checked) and a facts line — then the same card in Korean via `--lang ko`." width="820">
@@ -25,16 +26,44 @@ shown as `◌ no verdict`, never guessed.
 ## Try it
 
 ```bash
-npx trailix demo      # show an example card (no session needed)
-npx trailix           # grade the most recent session in this project
-npx trailix --done    # grade the session that just ended (from a new terminal)
-npx trailix list      # list recent sessions
-npx trailix --ascii   # portable ASCII output (no box, ASCII glyphs)
-npx trailix --lang ko # 한국어 카드
+npx trailix map --open  # THE session map: the whole scope of the work, visually
+npx trailix demo        # show an example card (no session needed)
+npx trailix             # grade the most recent session in this project
+npx trailix --done      # grade the session that just ended (from a new terminal)
+npx trailix list        # list recent sessions
+npx trailix --ascii     # portable ASCII output (no box, ASCII glyphs)
+npx trailix --lang ko   # 한국어 카드/지도
 ```
 
 Requires **Node 24+**. Nothing to configure — trailix reads your local Claude
 Code session logs directly.
+
+## The session map (`trailix map`)
+
+One command turns the session log into a single self-contained HTML page —
+no server, no external resources, readable even with JavaScript off, printable:
+
+- **One-line summary** — "In 1h 12m, it read 18 files, changed 7 files
+  (+412/−96 lines) and ran 31 commands. At 2 of 4 crossroads it asked you."
+- **The trail ribbon** — a real-timestamp timeline of the whole session:
+  research/decide/edit/run coloured runs, idle gaps compressed and labelled
+  honestly ("≈ 23m idle"), decision markers that are never dropped, a
+  delegation track, and a turn-by-turn list underneath.
+- **Decisions, verbatim and complete** — every question it asked you (with all
+  the options and what you chose), every plan approval, and estimated
+  self-decisions. This list is never truncated: it exists because "the model
+  showed me only 3 curated judgements" was the original pain.
+- **Research and work detail** — per-file read depth (deep/partial/skim,
+  measured from lines actually read), web search queries verbatim, per-file
+  +added/−removed line counts, commands classified (test/build/inspect).
+- **Subagents** — what each spawned agent (or workflow fleet) did, from their
+  own transcripts.
+- **The scorecard** — the same 5-rule verdict layer, embedded at the bottom.
+
+Everything is counted from the local log by fixed rules; estimates are
+labelled `(est.)`, missing data shows as "—", and the AI's own final report is
+included verbatim in the appendix so you can compare its claims with the
+measured facts yourself.
 
 ## The automatic report card
 
