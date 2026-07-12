@@ -1,7 +1,9 @@
 import { parseSessionFile } from './parser.ts';
 import { buildCard } from './card.ts';
 import { renderCli, renderSkill } from './render/index.ts';
-import { detectLang } from './messages.ts';
+import { renderMapHtml } from './render/map.ts';
+import { buildMapModel, collectSubagentSummaries } from './scope.ts';
+import { detectLang, msg } from './messages.ts';
 import { demoCard } from './demo.ts';
 import { listProjectSessions, selectLatestSession, selfSession, type SessionFile } from './session-select.ts';
 import type { Lang } from './types.ts';
@@ -9,6 +11,8 @@ import type { Lang } from './types.ts';
 /**
  * `trailix` CLI. Pure I/O in → string out, so it is testable without a TTY.
  * Read-only and fail-soft: a missing session prints guidance, never an error.
+ * Side-effects (map file write, browser open) are injected by the bin wrapper
+ * so runCli itself stays a pure function.
  */
 
 export interface CliIO {
@@ -17,6 +21,10 @@ export interface CliIO {
   cwd: string;
   isTTY: boolean;
   termWidth: number;
+  /** Injected by bin: write the map HTML. Absent (tests/pipes) → stdout. */
+  writeFile?: (path: string, content: string) => void;
+  /** Injected by bin: open a file in the platform browser (fail-soft). */
+  openPath?: (path: string) => void;
 }
 
 export interface CliResult {
@@ -28,27 +36,30 @@ const HELP = `trailix — how thorough was your delegated Claude Code work?
 
 usage:
   trailix [last]        grade the most recent session in this project
+  trailix map           build the session map (self-contained HTML, at a glance)
   trailix list          list recent sessions in this project
   trailix demo          show an example card (no session needed)
   trailix --help        show this help
 
 options:
   --done                exclude the still-running session (grade the one that just ended)
+  --open                with map: open the HTML in your browser
   --ascii               ASCII glyphs and no box (portable output)
   --lang <en|ko>        force card language (default: auto from LANG)
 `;
 
 interface ParsedArgs {
-  command: 'last' | 'list' | 'help' | 'demo';
+  command: 'last' | 'list' | 'help' | 'demo' | 'map';
   done: boolean;
   ascii: boolean;
   self: boolean;
+  open: boolean;
   format: 'term' | 'md';
   lang?: Lang;
 }
 
 function parseArgs(argv: string[]): ParsedArgs {
-  const out: ParsedArgs = { command: 'last', done: false, ascii: false, self: false, format: 'term' };
+  const out: ParsedArgs = { command: 'last', done: false, ascii: false, self: false, open: false, format: 'term' };
   let sawCommand = false;
   for (let i = 0; i < argv.length; i++) {
     const a = argv[i] as string;
@@ -56,6 +67,7 @@ function parseArgs(argv: string[]): ParsedArgs {
     else if (a === '--done') out.done = true;
     else if (a === '--ascii') out.ascii = true;
     else if (a === '--self') out.self = true;
+    else if (a === '--open') out.open = true;
     else if (a === '--format' || a === '--format=md' || a === '--format=term') {
       const v = a.includes('=') ? a.slice('--format='.length) : argv[++i];
       if (v === 'md' || v === 'term') out.format = v;
@@ -72,6 +84,7 @@ function parseArgs(argv: string[]): ParsedArgs {
       else if (a === 'last') out.command = 'last';
       else if (a === 'help') out.command = 'help';
       else if (a === 'demo') out.command = 'demo';
+      else if (a === 'map') out.command = 'map';
     }
   }
   return out;
@@ -90,6 +103,29 @@ async function renderSession(file: SessionFile, io: CliIO, args: ParsedArgs, lan
   const card = buildCard(stats, { lang });
   if (args.format === 'md') return renderSkill(card);
   return renderCli(card, { env: io.env, isTTY: io.isTTY, termWidth: io.termWidth, ascii: args.ascii });
+}
+
+/** `trailix map`: build the session-map HTML into ~/.cache/trailix/maps/. */
+async function runMap(file: SessionFile, io: CliIO, args: ParsedArgs, lang: Lang): Promise<CliResult> {
+  const stats = await parseSessionFile(file.path, { scope: true });
+  const subagents = await collectSubagentSummaries(file.path);
+  const model = buildMapModel(stats, { lang, sessionId: file.sessionId, sourcePath: file.path, home: io.env['HOME'], subagents });
+  const html = renderMapHtml(model);
+
+  if (io.writeFile === undefined) return { exitCode: 0, stdout: html };
+
+  const cacheRoot = io.env['XDG_CACHE_HOME'] !== undefined && io.env['XDG_CACHE_HOME'] !== ''
+    ? io.env['XDG_CACHE_HOME']
+    : `${io.env['HOME'] ?? '~'}/.cache`;
+  const outPath = `${cacheRoot}/trailix/maps/${file.sessionId}.html`;
+  io.writeFile(outPath, html);
+
+  const lines = [msg('map.cli.saved', { path: outPath }, lang)];
+  if (args.open && io.openPath !== undefined) {
+    io.openPath(outPath);
+    lines.push(msg('map.cli.opening', {}, lang));
+  }
+  return { exitCode: 0, stdout: lines.join('\n') + '\n' };
 }
 
 function noSessionMessage(lang: Lang): string {
@@ -127,7 +163,11 @@ export async function runCli(io: CliIO, now = Date.now()): Promise<CliResult> {
     : selectLatestSession({ cwd: io.cwd, home: io.env['HOME'], excludeRunning: args.done });
   if (session === undefined) return { exitCode: 0, stdout: noSessionMessage(lang) + '\n' };
   try {
-    return { exitCode: 0, stdout: (await renderSession(session, io, args, lang)) + '\n' };
+    if (args.command === 'map') return await runMap(session, io, args, lang);
+    const card = await renderSession(session, io, args, lang);
+    // discoverability: the card points at its own map (term surface only)
+    const hint = args.format === 'term' ? `\n   ${msg('map.hint', {}, lang)}` : '';
+    return { exitCode: 0, stdout: card + hint + '\n' };
   } catch {
     // session file vanished or became unreadable between selection and parse —
     // degrade to guidance, never a stack trace (cli.ts fail-soft contract)
