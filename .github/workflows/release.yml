@@ -26,6 +26,13 @@ jobs:
       - run: npm run typecheck
       - run: npm test
       - name: GitHub Release
-        run: gh release create "$GITHUB_REF_NAME" --title "$GITHUB_REF_NAME" --notes "See [CHANGELOG.md](./CHANGELOG.md). Install: \`npx trailix\` (Node 24+)."
+        # `run:` MUST be a block scalar here: the --notes text contains
+        # "Install: " (colon-space), which a plain scalar would parse as a YAML
+        # mapping and fail the whole workflow to validate (the 0s startup
+        # failures on v0.1.0–v0.3.0 were all this).
         env:
           GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "$GITHUB_REF_NAME" \
+            --title "$GITHUB_REF_NAME" \
+            --notes "See [CHANGELOG.md](./CHANGELOG.md). Install: \`npx trailix\` (Node 24+)."
