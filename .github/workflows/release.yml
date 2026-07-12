@@ -1,40 +1,30 @@
 name: Release
 
-# Publishes to npm when a v* tag is pushed. Requires an NPM_TOKEN secret
-# (a granular automation token with "bypass 2FA" enabled, since the account
-# has 2FA on). Tag with: npm version <patch|minor|major> && git push --tags
+# On a v* tag: verify (typecheck + test) and create the GitHub Release.
+#
+# npm publishing is intentionally NOT automated. The npm account has 2FA on and
+# no bypass-2FA automation token is configured, so publishing an automation flow
+# here could never actually publish — every release is done manually with
+# `npm publish`. Keeping this workflow minimal (no conditional publish step, no
+# id-token/provenance) avoids the workflow-validation startup failures the
+# earlier publish-automation form hit on v0.1.0–v0.3.0.
 on:
   push:
     tags: ['v*']
 
 jobs:
-  publish:
+  release:
     runs-on: ubuntu-latest
     permissions:
       contents: write # create the GitHub Release
-      id-token: write # npm provenance
-    env:
-      # job-level so the publish step's own `if` can read it. A step-level env
-      # is NOT available to that step's `if`, which made the whole workflow fail
-      # to validate (0s startup failure) on v0.1.0 and v0.2.0.
-      NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
           node-version: 24
-          registry-url: https://registry.npmjs.org
-          cache: npm
       - run: npm ci
       - run: npm run typecheck
       - run: npm test
-      # Skips cleanly if NPM_TOKEN isn't set (e.g. the first release was
-      # published manually) — no red X on a version that's already live.
-      - name: Publish to npm
-        if: ${{ env.NPM_TOKEN != '' }}
-        run: npm publish --provenance --access public
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
       - name: GitHub Release
         run: gh release create "$GITHUB_REF_NAME" --title "$GITHUB_REF_NAME" --notes "See [CHANGELOG.md](./CHANGELOG.md). Install: \`npx trailix\` (Node 24+)."
         env:
